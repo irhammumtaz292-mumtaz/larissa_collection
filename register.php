@@ -1,6 +1,27 @@
 <?php
 
+    require_once ("config/db/db.php");
+    require_once ("config/controller/controller.php");
 
+    // jika tombol tambah di tekan jalankan script berikut
+    if (isset($_POST['daftar'])) {
+        if($result = daftar_akun_baru($_POST) > 0) {
+            echo "
+                <script>
+                    alert('Email telah dikirim silahkan cek!');
+                    window.location.href = 'login.php';
+                </script>
+                ";
+        } else {
+            echo "
+                <script>
+                    alert('Email gagal dikirim!');
+                    window.location.href = 'register.php';
+                </script>
+                ";
+        }
+
+    }
 
 ?>
 <!DOCTYPE html>
@@ -52,7 +73,7 @@
                             </div>
                             
                             <div class="form-floating mb-2">
-                                <input type="number" name="no_hp" id="floatingInput" class="form-control" minlength="12" placeholder="Nomor Handphone" required>
+                                <input type="number" name="no_hp" id="floatingInput" class="form-control" minlength="12" maxlength="18" placeholder="Nomor Handphone" required>
                                 <label for="floatingInput">Nomor Handphone</label>
                             </div>
                             
@@ -60,26 +81,19 @@
                                 <textarea name="alamat" class="form-control" minlength="5" placeholder="Alamat" rows="3" required></textarea>
                             </div>
 
-                            <!-- <div class="form-check mb-3">
-                                <input type="checkbox" class="form-check-input" required>
-                                <label class="form-check-label">
-                                    Saya setuju dengan syarat & ketentuan
-                                </label>
-                            </div> -->
-
-                        </form>
-
                     </div>
 
                     <!-- Footer -->
                     <div class="card-footer text-center">
-                        <button type="submit" class="btn btn-primary w-100 mb-2">
+                        <button type="submit" name="daftar" class="btn btn-primary w-100 mb-2">
                             Daftar
                         </button>
                         <small>
                             Sudah punya akun? <a href="login.php">Login</a>
                         </small>
                     </div>
+
+                    </form>
 
                 </div>
 

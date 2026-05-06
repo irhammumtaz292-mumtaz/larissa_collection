@@ -7,11 +7,6 @@
         $popupEksekusi = '';
     // .Variabel
 
-    // Pengecekan sedang berada di halaman mana (Untuk warna navigasi admin)
-    function active($file, $laman) {
-        return $laman == $file ? 'active' : '';
-    }
-
     // Fungsi Read
     function select($query)
     {
@@ -35,29 +30,108 @@
         {
             global $db;
 
+            require 'assets/vendor/autoload.php';
+
             $nama      = htmlspecialchars(strip_tags($post['nama']));
             $username  = htmlspecialchars(strip_tags($post['username']));
             $password  = htmlspecialchars(strip_tags($post['password']));
             $email     = htmlspecialchars(strip_tags($post['email']));
             $no_hp     = htmlspecialchars(strip_tags($post['no_hp']));
             $alamat    = htmlspecialchars(strip_tags($post['alamat']));
-            $role     = "User";
 
-            // Cek role
-            if (empty($_POST['role'])) {
-                echo "<script>
-                alert('Role wajib dipilih!');
-                document.location.href = 'admin_user.php';
-              </script>";
+            // cek username atau email sudah ada atau belum
+            $check = mysqli_query($db, "
+                SELECT * FROM akun 
+                WHERE username = '$username' 
+                OR email = '$email'
+            ");
+
+            if (mysqli_num_rows($check) > 0) {
+
+                echo "
+                <script>
+                    alert('Username atau Email sudah digunakan!');
+                    window.location.href='register.php';
+                </script>
+                ";
+
+                exit;
             }
             
             // enkripsi password
             $password = password_hash($password, PASSWORD_DEFAULT);
+
+            // token verifikasi
+            $token = bin2hex(random_bytes(32));
+
+            // expired 1 jam
+            $expired = date("Y-m-d H:i:s", strtotime("+1 hour"));
             
             // query tambah data
-            $query = "INSERT INTO akun VALUES(NULL, '$nama', '$username', '$password', '$email', '$no_hp', '$alamat', '$role')";
+            $query = "INSERT INTO akun 
+            VALUES(
+            NULL,
+            '$nama',
+            '$username',
+            '$password',
+            '$email',
+            '$no_hp',
+            '$alamat',
+            'User',
+            '0',
+            '$token',
+            '$expired'
+            )";
             
             mysqli_query($db, $query);
+
+            // =========================
+            // KIRIM EMAIL VERIFIKASI
+            // =========================
+
+            $link = "https://detention-eggbeater-managing.ngrok-free.dev/konveksi-app/verify.php?token=$token";
+
+            $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+
+            try {
+
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+
+                // gmail pengirim
+                $mail->Username   = 'bulmyre@gmail.com';
+
+                // app password gmail
+                $mail->Password   = 'fvun rzvk octn vwdx';
+
+                $mail->SMTPSecure = 'tls';
+                $mail->Port       = 587;
+
+                $mail->setFrom('bulmyre@gmail.com', 'Larissa Collection');
+
+                $mail->addAddress($email);
+
+                $mail->isHTML(true);
+
+                $mail->Subject = 'Verifikasi Akun';
+
+                $mail->Body = "
+                <h2>Verifikasi Akun</h2>
+
+                Klik link berikut untuk verifikasi akun:
+
+                <br><br>
+
+                <a href='$link'>$link</a>
+                ";
+
+                $mail->send();
+
+            } catch (Exception $e) {
+
+                // 
+            }
             
             return mysqli_affected_rows($db);
         }
@@ -87,7 +161,7 @@
             $password = password_hash($password, PASSWORD_DEFAULT);
             
             // query tambah data
-            $query = "INSERT INTO akun VALUES(NULL, '$nama', '$username', '$password', '$email', '$no_hp', '$alamat', '$role')";
+            $query = "INSERT INTO akun VALUES(NULL, '$nama', '$username', '$password', '$email', '$no_hp', '$alamat', '$role', '1', 'Dibuat oleh admin', '')";
             
             mysqli_query($db, $query);
             

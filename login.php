@@ -1,52 +1,59 @@
 <?php
 
-  // session_start();
+  session_start();
 
-  // include 'config/app.php';
+  include 'config/db/db.php';
 
-  // // check apakah tombol login ditekan
-  // if (isset($_POST['login'])) {
+  // check apakah tombol login ditekan
+  if (isset($_POST['login'])) {
 
-  //   // ambil input username dan password
-  //   $username = mysqli_real_escape_string($db, $_POST['username']);
-  //   $password = mysqli_real_escape_string($db, $_POST['password']);
+    // ambil input username dan password
+    $username = mysqli_real_escape_string($db, $_POST['username']);
+    $password = mysqli_real_escape_string($db, $_POST['password']);
 
-  //   // check username
-  //   $result = mysqli_query($db, "SELECT * FROM guru WHERE username = '$username'");
+    // check username
+    $result = mysqli_query($db, "SELECT * FROM akun WHERE username = '$username'");
 
-  //   // jika ada usernya
-  //   if (mysqli_num_rows($result) == 1) {
+    // jika ada usernya
+    if (mysqli_num_rows($result) == 1) {
 
-  //     // check passwordnya
-  //     $hasil = mysqli_fetch_assoc($result);
+      // check passwordnya
+      $hasil = mysqli_fetch_assoc($result);
 
-  //     if (password_verify($password, $hasil['password'])) {
-  //         // set session
-  //         $_SESSION['login']         = true;
-  //         $_SESSION['id_guru']       = $hasil['id_guru'];
-  //         $_SESSION['nip']           = $hasil['nip'];
-  //         $_SESSION['nama']          = $hasil['nama'];
-  //         $_SESSION['jenis_kelamin'] = $hasil['jenis_kelamin'];
-  //         $_SESSION['agama']         = $hasil['agama'];
-  //         $_SESSION['foto']          = $hasil['foto'];
-  //         $_SESSION['email']         = $hasil['email'];
-  //         $_SESSION['username']      = $hasil['username'];
-  //         $_SESSION['level']         = $hasil['level'];
+      if ($hasil['is_verified'] == 0) {
 
-  //         // jika login benar arahkan ke file sesuai level
-  //         if ($hasil['level'] == 'Admin') {
-  //           header("Location: ^admin/");
-  //         exit;
-  //         } else {
-  //           header("Location: ^guru/");
-  //         exit;
-  //         }
-  //     }else {
-  //         // jika username/password salah
-  //         $error = true;
-  //     }
-  //   } 
-  // } 
+          echo "<script>
+            alert('Akun belum diverifikasi!');
+            window.location.href = 'login.php';
+          </script>";
+          exit;
+      }
+
+      if (password_verify($password, $hasil['password'])) {
+          // set session
+          $_SESSION['login']         = true;
+          $_SESSION['id_akun']       = $hasil['id_akun'];
+          $_SESSION['nama']          = $hasil['nama'];
+          $_SESSION['username']      = $hasil['username'];
+          $_SESSION['email']         = $hasil['email'];
+          $_SESSION['no_hp']          = $hasil['no_hp'];
+          $_SESSION['alamat']          = $hasil['alamat'];
+          $_SESSION['role']         = $hasil['role'];
+
+          // jika login benar arahkan ke file sesuai role
+          if ($hasil['role'] == 'Admin') {
+            header("Location: app/admin/.");
+          exit;
+          } else {
+            header("Location: app/users/.");
+          exit;
+          }
+      }else {
+          // jika username/password salah
+          $error = true;
+      }
+    } 
+  } 
 
 ?>
 
