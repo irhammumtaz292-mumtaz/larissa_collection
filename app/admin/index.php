@@ -1,5 +1,25 @@
 <?php
 
+    session_start();
+
+    // // membatasi halaman sebelum login
+    // if (!isset($_SESSION["login"])) {
+    //     echo "<script>
+    //             alert('AKSES DI TOLAK!');
+    //             document.location.href = '../../.';
+    //         </script>";
+    //     exit;
+    // }
+
+    // // membatasi halaman sesuai user login
+    // if ($_SESSION["role"] != 'Admin') {
+    //     echo "<script>
+    //         alert('AKSES DI TOLAK!');
+    //         document.location.href = '../../.';
+    //         </script>";
+    //     exit;
+    // }
+
     $laman = 'Dashboard';
     include '../../assets/layout/admin/header.php';
 

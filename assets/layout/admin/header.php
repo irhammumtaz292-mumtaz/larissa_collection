@@ -39,6 +39,7 @@
                     <li class="nav-item"><a href="admin_user.php" class="nav-link <?= ($laman == 'Pengguna') ? 'active' : '' ?> text-white"><i class="bi bi-people me-2"></i>Pengguna</a></li>
                     <li class="nav-item"><a href="admin_pesanan.php" class="nav-link <?= ($laman == 'Pesanan') ? 'active' : '' ?> text-white"><i class="bi bi-bag me-2"></i>Pesanan</a></li>
                     <li class="nav-item"><a href="admin_produk.php" class="nav-link <?= ($laman == 'Produk') ? 'active' : '' ?> text-white"><i class="bi bi-basket me-2"></i>Produk</a></li>
+                    <li class="nav-item"><a href="admin_warna.php" class="nav-link <?= ($laman == 'Warna') ? 'active' : '' ?> text-white"><i class="bi bi-palette me-2"></i>Warna</a></li>
                     <li class="nav-item"><a href="#" class="nav-link text-white"><i class="bi bi-file-earmark-text me-2"></i>Laporan</a></li>
                     <!-- <li class="nav-item"><a href="#" class="nav-link text-white"><i class="bi bi-gear me-2"></i>Settings</a></li> -->
                     </ul>
@@ -49,11 +50,11 @@
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
                     <img src="https://placehold.co/32x32" alt="User" class="rounded-circle me-2">
-                    <strong>Admin</strong>
+                    <strong><?= $_SESSION['username'] ?></strong>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
                     <li><a class="dropdown-item" href="#">Profile</a></li>
-                    <li><a class="dropdown-item" href="#">Sign out</a></li>
+                    <li><a class="dropdown-item" href="../../logout.php">Sign out</a></li>
                     </ul>
                 </div>
 

@@ -1,5 +1,25 @@
 <?php
 
+    session_start();
+
+    // // membatasi halaman sebelum login
+    // if (!isset($_SESSION["login"])) {
+    //     echo "<script>
+    //             alert('AKSES DI TOLAK!');
+    //             document.location.href = '../../.';
+    //         </script>";
+    //     exit;
+    // }
+
+    // // membatasi halaman sesuai user login
+    // if ($_SESSION["role"] != 'Admin') {
+    //     echo "<script>
+    //         alert('AKSES DI TOLAK!');
+    //         document.location.href = '../../.';
+    //         </script>";
+    //     exit;
+    // }
+
     // Halaman
     $laman = 'Pengguna';
     $fileLaman = 'admin_user.php';
@@ -12,10 +32,13 @@
         if(isset($_POST['cari'])) 
         {
             $kata_cari = htmlspecialchars(strip_tags($_POST['kata_cari']));
-            $data_akun = select("SELECT * FROM akun WHERE CONCAT(nama, username, email, no_hp, alamat, role) LIKE '%$kata_cari%' ORDER BY role ASC, nama ASC");
+            $data_akun = select("SELECT akun.*, customer.* FROM akun
+            JOIN customer ON akun.id_customer = customer.id_customer
+            WHERE CONCAT(nama, username, email, no_hp, alamat, role) LIKE '%$kata_cari%' ORDER BY role ASC, nama ASC");
         } else 
         {
-            $data_akun = select("SELECT * FROM akun ORDER BY role ASC, nama ASC");
+            $data_akun = select("SELECT akun.*, customer.* FROM akun
+            JOIN customer ON akun.id_customer = customer.id_customer ORDER BY role ASC, nama ASC");
         }
 
         // jika tombol tambah di tekan jalankan script berikut
@@ -103,14 +126,14 @@
                                 <table id="table" class="table table-sm table-bordered border-dark table-hover">
                                 <thead class="text-center">
                                     <tr>
-                                    <th scope="col" class="bg-success">#</th>
-                                    <th scope="col" class="bg-success">Nama</th>
-                                    <th scope="col" class="bg-success">Username</th>
-                                    <th scope="col" class="bg-success">Email</th>
-                                    <th scope="col" class="bg-success">No HP</th>
-                                    <th scope="col" class="bg-success">Alamat</th>
-                                    <th scope="col" class="bg-success">Role</th>
-                                    <th scope="col" class="bg-success">Action</th>
+                                    <th class="bg-success">#</th>
+                                    <th class="bg-success">Nama</th>
+                                    <th class="bg-success">Username</th>
+                                    <th class="bg-success">Email</th>
+                                    <th class="bg-success">No HP</th>
+                                    <th class="bg-success">Alamat</th>
+                                    <th class="bg-success">Role</th>
+                                    <th class="bg-success">Action</th>
                                     </tr>
                                 </thead>
 
@@ -287,7 +310,7 @@
                                 </div>
 
                                 <div class="form-floating mb-2">
-                                    <input type="text" name="username" id="floatingInput" class="form-control" minlength="5" placeholder="Username" required>
+                                    <input type="text" name="username" id="floatingInput" class="form-control" minlength="5" placeholder="username" required>
                                     <label for="floatingInput">Username</label>
                                 </div>
 
@@ -315,7 +338,7 @@
                                     <select name="role" id="role" class="form-control" minlength="5" required>
                                     <option value="" disabled selected>-- Pilih --</option>
                                     <option value="Admin">Admin</option>
-                                    <option value="User">User</option>
+                                    <option value="Customer">Customer</option>
                                     </select>
                                 </div>
 
@@ -352,6 +375,7 @@
 
                                 <form action="" method="post" enctype="multipart/form-data">
                                     <input type="hidden" name="id_akun" value="<?= $akun['id_akun'] ?>">
+                                    <input type="hidden" name="id_customer" value="<?= $akun['id_customer'] ?>">
 
                                     <div class="form-floating mb-3">
                                         <input type="text" name="nama" id="floatingInput" class="form-control" minlength="5" placeholder="Nama" value="<?= $akun['nama'] ?>" required>
@@ -359,12 +383,12 @@
                                     </div>
 
                                     <div class="form-floating mb-3">
-                                        <input type="text" name="username" id="floatingInput" class="form-control" minlength="5" placeholder="Username" value="<?= $akun['username'] ?>" required>
+                                        <input type="text" name="username" id="floatingInput" class="form-control" minlength="5" placeholder="username" value="<?= $akun['username'] ?>" required>
                                         <label for="floatingInput">Username</label>
                                     </div>
 
                                     <div class="form-floating mb-3">
-                                        <input type="password" name="password" id="floatingInput" class="form-control" minlength="5" placeholder="Password" required>
+                                        <input type="password" name="password" id="floatingInput" class="form-control" placeholder="Password">
                                         <label for="floatingInput">Password</label>
                                     </div>
 
@@ -386,7 +410,7 @@
                                         <label for="role">Role</label>
                                         <select name="role" id="role" class="form-control" minlength="5" required>
                                         <option value="Admin" <?= ($akun['role'] == 'Admin') ? 'selected' : '' ?> >Admin</option>
-                                        <option value="User" <?= ($akun['role'] == 'User') ? 'selected' : '' ?> >User</option>
+                                        <option value="Customer" <?= ($akun['role'] == 'Customer') ? 'selected' : '' ?> >Customer</option>
                                         </select>
                                     </div>
 
@@ -417,7 +441,7 @@
                             <div class="modal-body">
                                 <form action="" method="post">
                                 <input type="hidden" name="id_akun" value="<?= $akun['id_akun'] ?>">
-                                <!-- <input type="hidden" name="fotoLama" value="<?//= $akun['foto']; ?>"> -->
+                                <input type="hidden" name="id_customer" value="<?= $akun['id_customer'] ?>">
                                 <h6>Yakin Ingin Menghapus <?= $laman; ?> Dengan :
                                     <ul>
                                         <li>Username : <span class="badge bg-info"><?= $akun['username'] ?></span></li>

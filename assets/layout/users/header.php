@@ -1,3 +1,11 @@
+<?php
+
+    // Koneksi ke database dan backend
+    require_once '../../config/db/db.php';
+    require_once '../../config/controller/controller.php';
+
+?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
