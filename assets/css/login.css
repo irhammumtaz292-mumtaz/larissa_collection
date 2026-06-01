@@ -1,0 +1,44 @@
+body{
+    min-height:100vh;
+    user-select:none;
+    background:
+        linear-gradient(
+            rgba(0,0,0,.55),
+            rgba(0,0,0,.65)
+        ),
+        url('../img/3.jpeg')
+        center center/cover no-repeat fixed;
+}
+
+img{
+    -webkit-user-drag:none;
+}
+
+.login-card{
+    transition:all .3s ease;
+    box-shadow:
+        0 0 30px rgba(255,193,7,.25),
+        0 0 60px rgba(255,193,7,.15),
+        0 1rem 3rem rgba(0,0,0,.35) !important;
+}
+
+.login-card:hover{
+    transform:translateY(-8px);
+    box-shadow:
+        0 0 40px rgba(255,193,7,.35),
+        0 0 80px rgba(255,193,7,.25),
+        0 1.5rem 4rem rgba(0,0,0,.45) !important;
+}
+
+.form-control:focus{
+    border-color:#ffc107;
+    box-shadow:0 0 0 .25rem rgba(255,193,7,.25);
+}
+
+.btn-login{
+    transition:.3s;
+}
+
+.btn-login:hover{
+    transform:translateY(-2px);
+}

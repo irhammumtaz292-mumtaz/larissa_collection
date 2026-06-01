@@ -25,81 +25,194 @@
 
 ?>
 <!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Register</title>
+<html lang="id" data-bs-theme="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Register</title>
 
-    <!-- Bootstrap CSS -->
-    <link href="assets/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+        <link href="assets/css/bootstrap.min.css" rel="stylesheet">
+        <link href="assets/css/bootstrap-icons.min.css" rel="stylesheet">
+        <link href="assets/css/register.css" rel="stylesheet">
 
-    <main class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
+    </head>
+    <body>
 
-                <div class="card shadow-sm">
+        <main class="container min-vh-100 d-flex justify-content-center align-items-center">
 
-                    <!-- Header -->
-                    <div class="card-header text-center fw-bold">
-                        Register Akun
+            <div class="w-100 px-3" style="max-width:390px;">
+
+                <div
+                    class="card register-card bg-dark border-0 rounded-5"
+                    style="--bs-bg-opacity:.75;">
+
+                    <div class="card-header text-center py-4">
+                        <h4 class="fw-bold mb-0">
+                            Register Akun
+                        </h4>
                     </div>
 
-                    <!-- Body (Scrollable) -->
-                    <div class="card-body overflow-auto" style="max-height: 400px;">
-                        
-                        <form action="" method="post" enctype="multipart/form-data">
+                    <form
+                        id="registerForm"
+                        action=""
+                        method="post"
+                        enctype="multipart/form-data">
 
-                            <div class="form-floating mb-2">
-                                <input type="text" name="nama" id="floatingInput" class="form-control" minlength="5" placeholder="Nama" required>
-                                <label for="floatingInput">Nama</label>
+                        <div class="card-body form-scroll px-4" style="max-height:50vh;">
+
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="text"
+                                    name="nama"
+                                    id="nama"
+                                    class="form-control"
+                                    minlength="5"
+                                    placeholder="Nama"
+                                    required>
+                                <label for="nama">Nama</label>
                             </div>
 
-                            <div class="form-floating mb-2">
-                                <input type="text" name="username" id="floatingInput" class="form-control" minlength="5" placeholder="Username" required>
-                                <label for="floatingInput">Username</label>
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="text"
+                                    name="username"
+                                    id="username"
+                                    class="form-control"
+                                    minlength="5"
+                                    placeholder="Username"
+                                    required>
+                                <label for="username">Username</label>
                             </div>
 
-                            <div class="form-floating mb-2">
-                                <input type="password" name="password" id="floatingInput" class="form-control" minlength="5" placeholder="Password" required>
-                                <label for="floatingInput">Password</label>
+                            <!-- Password -->
+                            <div class="input-group mb-3">
+
+                                <div class="form-floating flex-grow-1">
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        id="password"
+                                        class="form-control"
+                                        minlength="5"
+                                        placeholder="Password"
+                                        required>
+
+                                    <label for="password">
+                                        Password
+                                    </label>
+                                </div>
+
+                                <button
+                                    class="btn btn-outline-warning"
+                                    type="button"
+                                    id="togglePassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+
                             </div>
 
-                            <div class="form-floating mb-2">
-                                <input type="email" name="email" id="floatingInput" class="form-control" minlength="5" placeholder="Email" required>
-                                <label for="floatingInput">Email</label>
-                            </div>
-                            
-                            <div class="form-floating mb-2">
-                                <input type="number" name="no_hp" id="floatingInput" class="form-control" minlength="12" maxlength="18" placeholder="Nomor Handphone" required>
-                                <label for="floatingInput">Nomor Handphone</label>
-                            </div>
-                            
-                            <div class="form mb-2">
-                                <textarea name="alamat" class="form-control" minlength="5" placeholder="Alamat" rows="3" required></textarea>
+                            <!-- Konfirmasi Password -->
+                            <div class="input-group mb-3">
+
+                                <div class="form-floating flex-grow-1">
+                                    <input
+                                        type="password"
+                                        name="konfirmasi_password"
+                                        id="konfirmasi_password"
+                                        class="form-control"
+                                        minlength="5"
+                                        placeholder="Konfirmasi Password"
+                                        required>
+
+                                    <label for="konfirmasi_password">
+                                        Konfirmasi Password
+                                    </label>
+                                </div>
+
+                                <button
+                                    class="btn btn-outline-warning"
+                                    type="button"
+                                    id="toggleConfirmPassword">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+
                             </div>
 
-                    </div>
+                            <div
+                                id="passwordError"
+                                class="invalid-feedback d-none mb-3">
+                            </div>
 
-                    <!-- Footer -->
-                    <div class="card-footer text-center">
-                        <button type="submit" name="daftar" class="btn btn-primary w-100 mb-2">
-                            Daftar
-                        </button>
-                        <small>
-                            Sudah punya akun? <a href="login.php">Login</a>
-                        </small>
-                    </div>
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="email"
+                                    name="email"
+                                    id="email"
+                                    class="form-control"
+                                    minlength="5"
+                                    placeholder="Email"
+                                    required>
 
-                        </form>
+                                <label for="email">Email</label>
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <input
+                                    type="number"
+                                    name="no_hp"
+                                    id="no_hp"
+                                    class="form-control"
+                                    placeholder="Nomor Handphone"
+                                    required>
+
+                                <label for="no_hp">
+                                    Nomor Handphone
+                                </label>
+                            </div>
+
+                            <div class="mb-3">
+                                <textarea
+                                    name="alamat"
+                                    class="form-control"
+                                    minlength="5"
+                                    placeholder="Alamat"
+                                    rows="3"
+                                    required></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="card-footer text-center py-3 px-4">
+
+                            <button
+                                type="submit"
+                                name="daftar"
+                                class="btn btn-warning w-100 py-2 fw-semibold btn-register rounded-4">
+                                Daftar
+                            </button>
+
+                            <p class="mt-3 mb-0 small text-body-secondary">
+                                Sudah punya akun?
+                                <a
+                                    href="login.php"
+                                    class="link-warning text-decoration-none fw-semibold">
+                                    Login
+                                </a>
+                            </p>
+
+                        </div>
+
+                    </form>
 
                 </div>
 
             </div>
-        </div>
-    </main>
 
-</body>
+        </main>
+
+        <script src="assets/js/register.js"></script>
+
+        <script src="assets/js/bootstrap.bundle.min.js"></script>
+
+    </body>
 </html>

@@ -623,4 +623,127 @@
 
     // .Customer
 
+    // Pesanan Section
+
+        // Tambah Desain Custom
+        function tambah_desain_custom($post, $files)
+        {
+            global $db;
+
+            // Customer (buat jika belum ada berdasarkan no_hp)
+            $nama   = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama'] ?? '')));
+            $no_hp  = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['hp'] ?? '')));
+            $alamat = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['alamat'] ?? '')));
+
+            // coba cari customer berdasarkan no_hp
+            $query = "SELECT id_customer FROM customer WHERE no_hp = '$no_hp' LIMIT 1";
+            $res = mysqli_query($db, $query);
+            if ($row = mysqli_fetch_assoc($res)) {
+                $id_customer = $row['id_customer'];
+            } else {
+                $queryIns = "INSERT INTO customer VALUES(NULL, '$nama', '$no_hp', '$alamat')";
+                mysqli_query($db, $queryIns);
+                $id_customer = mysqli_insert_id($db);
+            }
+
+            // Upload design images
+            $gambar_depan = upload_foto('tampak_depan', 'desain') ?? '';
+            $gambar_belakang = upload_foto('tampak_belakang', 'desain') ?? '';
+            $gambar_kanan = upload_foto('tampak_kanan', 'desain') ?? '';
+            $gambar_kiri = upload_foto('tampak_kiri', 'desain') ?? '';
+
+            // Upload multiple logos
+            $logoFiles = [];
+            if (isset($files['logo'])) {
+                $logos = $files['logo'];
+                $count = is_array($logos['name']) ? count($logos['name']) : 0;
+                for ($i = 0; $i < $count; $i++) {
+                    if ($logos['error'][$i] === UPLOAD_ERR_OK) {
+                        $tmpName = $logos['tmp_name'][$i];
+                        $orig = $logos['name'][$i];
+                        $ext = pathinfo($orig, PATHINFO_EXTENSION);
+                        $newName = uniqid() . "." . $ext;
+                        $uploadPath = __DIR__ . '/../../assets/img/desain/';
+                        if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
+                        move_uploaded_file($tmpName, $uploadPath . $newName);
+                        $logoFiles[] = $newName;
+                    }
+                }
+            }
+
+            $gambar_logo = mysqli_real_escape_string($db, json_encode($logoFiles));
+
+            $catatan_depan = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_depan'] ?? '')));
+            $catatan_belakang = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_belakang'] ?? '')));
+            $catatan_kanan = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_kanan'] ?? '')));
+            $catatan_kiri = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_kiri'] ?? '')));
+            $catatan_logo = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_logo'] ?? '')));
+
+            $queryDesain = "INSERT INTO desain_custom (id_customer, gambar_depan, catatan_depan, gambar_belakang, catatan_belakang, gambar_kanan, catatan_kanan, gambar_kiri, catatan_kiri, gambar_logo, catatan_logo, status_desain)
+                VALUES($id_customer, '$gambar_depan', '$catatan_depan', '$gambar_belakang', '$catatan_belakang', '$gambar_kanan', '$catatan_kanan', '$gambar_kiri', '$catatan_kiri', '$gambar_logo', '$catatan_logo', 'Menunggu')";
+
+            mysqli_query($db, $queryDesain);
+            return mysqli_insert_id($db);
+        }
+
+        // Tambah Pesanan
+        function tambah_pesanan($post)
+        {
+            global $db;
+
+            // Customer
+            $nama   = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama'] ?? '')));
+            $no_hp  = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['hp'] ?? '')));
+            $alamat = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['alamat'] ?? '')));
+
+            // coba cari customer berdasarkan no_hp
+            $query = "SELECT id_customer FROM customer WHERE no_hp = '$no_hp' LIMIT 1";
+            $res = mysqli_query($db, $query);
+            if ($row = mysqli_fetch_assoc($res)) {
+                $id_customer = $row['id_customer'];
+            } else {
+                $queryIns = "INSERT INTO customer VALUES(NULL, '$nama', '$no_hp', '$alamat')";
+                mysqli_query($db, $queryIns);
+                $id_customer = mysqli_insert_id($db);
+            }
+
+            // Design (uploaded or existing)
+            $id_desain = isset($post['id_desain']) ? intval($post['id_desain']) : null;
+            $id_desain_custom = isset($post['id_desain_custom']) ? intval($post['id_desain_custom']) : null;
+
+            // Bahan
+            $id_bahan = intval($post['id_bahan'] ?? 0);
+
+            // Sizes
+            $sizes = [
+                'S' => intval($post['size_s'] ?? 0),
+                'M' => intval($post['size_m'] ?? 0),
+                'L' => intval($post['size_l'] ?? 0),
+                'XL' => intval($post['size_xl'] ?? 0),
+                'XXL' => intval($post['size_xxl'] ?? 0),
+                'XXXL' => intval($post['size_xxxl'] ?? 0),
+            ];
+            $jumlah_beli = array_sum($sizes);
+            $ukuran_json = mysqli_real_escape_string($db, json_encode($sizes));
+
+            // Harga dasar dari bahan
+            $harga = 0;
+            if ($id_bahan) {
+                $q = mysqli_query($db, "SELECT harga_bahan FROM bahan WHERE id_bahan = $id_bahan LIMIT 1");
+                if ($r = mysqli_fetch_assoc($q)) {
+                    $harga_bahan = intval($r['harga_bahan']);
+                    $harga = $harga_bahan * $jumlah_beli;
+                }
+            }
+
+            // Insert pesanan - id_desain_custom bisa null jika pilih design existing
+            $queryPesanan = "INSERT INTO pesanan (id_customer, id_bahan, id_desain, id_desain_custom, jumlah_beli, ukuran, harga)
+                VALUES($id_customer, $id_bahan, " . ($id_desain ? $id_desain : 'NULL') . ", " . ($id_desain_custom ? $id_desain_custom : 'NULL') . ", $jumlah_beli, '$ukuran_json', $harga)";
+
+            mysqli_query($db, $queryPesanan);
+            return mysqli_insert_id($db);
+        }
+
+    // .Pesanan Section
+
 ?>

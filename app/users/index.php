@@ -16,79 +16,31 @@
     <main>
 
         <!-- HERO -->
-        <section class="py-4 bg-body-tertiary" aria-label="Hero Konveksi">
+        <header class="masthead">
             <div class="container">
-                <div id="heroCarousel" class="carousel slide carousel-fade rounded shadow overflow-hidden"
-                    data-bs-ride="carousel" data-bs-interval="4000" data-bs-pause="false" data-bs-wrap="true">
-
-                    <div class="carousel-indicators">
-                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0"
-                            class="active"></button>
-                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
-                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
-                    </div>
-
-                    <div class="carousel-inner">
-
-                        <div class="carousel-item active">
-                            <img src="../../assets/img/1.jpeg" class="d-block w-100" style="height:450px; object-fit:cover;"
-                                alt="Produksi Konveksi">
-                            <div class="carousel-caption d-flex flex-column justify-content-center h-100 text-light">
-                                <h1 class="fw-bold">Jasa Konveksi Berkualitas</h1>
-                                <p class="lead">Melayani pembuatan kaos, hoodie, dan seragam custom</p>
-                                <a href="#katalog" class="btn btn-primary btn-lg">Lihat Katalog</a>
-                            </div>
-                        </div>
-
-                        <div class="carousel-item">
-                            <img src="../../assets/img/2.jpeg" class="d-block w-100" style="height:450px; object-fit:cover;"
-                                alt="Bahan Premium">
-                            <div class="carousel-caption d-flex flex-column justify-content-center h-100 text-light">
-                                <h2 class="fw-bold">Bahan Premium</h2>
-                                <p class="lead">Cotton combed, fleece, dan bahan berkualitas lainnya</p>
-                                <a href="#katalog" class="btn btn-success btn-lg">Pesan Sekarang</a>
-                            </div>
-                        </div>
-
-                        <div class="carousel-item">
-                            <img src="../../assets/img/3.jpeg" class="d-block w-100" style="height:450px; object-fit:cover;"
-                                alt="Produksi Cepat">
-                            <div class="carousel-caption d-flex flex-column justify-content-center h-100 text-light">
-                                <h2 class="fw-bold">Produksi Cepat & Terpercaya</h2>
-                                <p class="lead">Cocok untuk komunitas, sekolah, dan perusahaan</p>
-                                <a href="#kontak" class="btn btn-warning btn-lg">Hubungi Kami</a>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel"
-                        data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon"></span>
-                    </button>
-
-                    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel"
-                        data-bs-slide="next">
-                        <span class="carousel-control-next-icon"></span>
-                    </button>
-
-                </div>
+                <div class="masthead-subheading">Welcome To Larisa Collection</div>
+                <div class="masthead-heading text-uppercase text-white-outline-orange">Jasa Konveksi Berkualitas</div>
+                <a class="btn btn-primary btn-xl text-uppercase" href="#katalog">Lihat Katalog</a>
             </div>
-        </section>
+        </header>
 
         <!-- KATALOG -->
-        <section id="katalog" class="py-5">
+        <section id="katalog" class="page-section bg-light py-5">
             <div class="container">
-                <h2 class="text-center mb-4 fw-bold">Katalog Produk</h2>
+                <div class="text-center">
+                    <h2 class="section-heading text-uppercase">Katalog Produk</h2>
+                    <h3 class="section-subheading text-muted">Temukan produk konveksi terbaik kami dengan bahan premium.</h3>
+                </div>
 
-                <?php if (count($data_produk) > 3) : ?>
+                <?php if (count($data_produk) > 6) : ?>
+                    <?php $catalogSlides = array_chunk($data_produk, 6); ?>
                     <div id="catalogCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-wrap="false">
                         <div class="carousel-inner">
-                            <?php foreach (array_chunk($data_produk, 3) as $index => $produkChunk) : ?>
+                            <?php foreach ($catalogSlides as $index => $produkChunk) : ?>
                                 <div class="carousel-item<?= $index === 0 ? ' active' : '' ?>">
                                     <div class="row g-4">
                                         <?php foreach ($produkChunk as $produk) : ?>
-                                            <div class="col-md-4">
+                                            <div class="col-md-4 col-sm-6">
                                                 <div class="card h-100">
                                                     <?php if (!empty($produk['gambar_produk'])) : ?>
                                                         <img src="../../assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="card-img-top" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
@@ -96,7 +48,9 @@
                                                     <div class="card-body">
                                                         <h5 class="card-title"><?= htmlspecialchars($produk['nama_produk']) ?></h5>
                                                         <p class="card-text"><?= htmlspecialchars($produk['deskripsi']) ?></p>
-                                                        <a href="pesanan.php?produk=<?= urlencode($produk['nama_produk']) ?>" class="btn btn-success btn-sm px-3 rounded-pill">Pesan Sekarang</a>
+                                                    </div>
+                                                    <div class="card-footer bg-transparent border-0 pt-0">
+                                                        <a href="pesanan.php?produk=<?= urlencode($produk['nama_produk']) ?>" class="btn btn-orange btn-sm w-100 rounded-pill">Pesan Sekarang</a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -105,14 +59,16 @@
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#catalogCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Sebelumnya</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#catalogCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Berikutnya</span>
-                        </button>
+                        <?php if (count($catalogSlides) > 1) : ?>
+                            <div class="carousel-arrow-group">
+                                <button type="button" class="btn btn-orange carousel-arrow-button" data-bs-target="#catalogCarousel" data-bs-slide="prev" aria-label="Sebelumnya">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <button type="button" class="btn btn-orange carousel-arrow-button" data-bs-target="#catalogCarousel" data-bs-slide="next" aria-label="Berikutnya">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php else : ?>
                     <div class="row g-4">
@@ -125,7 +81,9 @@
                                     <div class="card-body">
                                         <h5 class="card-title"><?= htmlspecialchars($produk['nama_produk']) ?></h5>
                                         <p class="card-text"><?= htmlspecialchars($produk['deskripsi']) ?></p>
-                                        <a href="<?= $halpem ?>?produk=<?= urlencode($produk['nama_produk']) ?>" class="btn btn-success btn-sm px-3 rounded-pill">Pesan Sekarang</a>
+                                    </div>
+                                    <div class="card-footer bg-transparent border-0 pt-0">
+                                        <a href="<?= $halpem ?>?produk=<?= urlencode($produk['nama_produk']) ?>" class="btn btn-orange btn-sm w-100 rounded-pill">Pesan Sekarang</a>
                                     </div>
                                 </div>
                             </div>
@@ -136,9 +94,10 @@
         </section>
 
         <!-- KEUNGGULAN -->
-        <section id="keunggulan" class="bg-body-tertiary py-5">
+        <section id="keunggulan" class="page-section py-5">
             <div class="container text-center">
-                <h2 class="mb-4 fw-bold">Kenapa Pilih Kami?</h2>
+                <h2 class="section-heading text-uppercase">Kenapa Pilih Kami?</h2>
+                <h3 class="section-subheading text-muted">Layanan konveksi kami dibuat untuk memenuhi seluruh kebutuhan produksi Anda.</h3>
                 <div class="row">
                     <div class="col-md-4">
                         <h5 class="fw-bold">Bahan Premium</h5>

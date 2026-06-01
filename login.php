@@ -1,138 +1,194 @@
 <?php
 
-  session_start();
+session_start();
 
-  include 'config/db/db.php';
+include 'config/db/db.php';
 
-  // check apakah tombol login ditekan
-  if (isset($_POST['login'])) {
+if (isset($_POST['login'])) {
 
-    // ambil input username dan password
-    $username = mysqli_real_escape_string($db, $_POST['username']);
-    $password = mysqli_real_escape_string($db, $_POST['password']);
+    $email    = mysqli_real_escape_string($db, trim($_POST['email']));
+    $password = $_POST['password'];
 
-    // check username
-    $result = mysqli_query($db, "SELECT * FROM akun WHERE username = '$username'");
+    $result = mysqli_query(
+        $db,
+        "SELECT * FROM akun WHERE email = '$email'"
+    );
 
-    // jika ada usernya
     if (mysqli_num_rows($result) == 1) {
 
-      // check passwordnya
-      $hasil = mysqli_fetch_assoc($result);
+        $hasil = mysqli_fetch_assoc($result);
 
-      if ($hasil['is_verified'] == 0) {
+        if ($hasil['is_verified'] == 0) {
 
-          echo "<script>
-            alert('Akun belum diverifikasi!');
-            window.location.href = 'login.php';
-          </script>";
-          exit;
-      }
+            echo "<script>
+                alert('Akun belum diverifikasi!');
+                window.location.href='login.php';
+            </script>";
+            exit;
+        }
 
-      if (password_verify($password, $hasil['password'])) {
-          // set session
-          $_SESSION['login']         = true;
-          $_SESSION['id_akun']       = $hasil['id_akun'];
-          $_SESSION['nama']          = $hasil['nama'];
-          $_SESSION['username']      = $hasil['username'];
-          $_SESSION['email']         = $hasil['email'];
-          $_SESSION['no_hp']          = $hasil['no_hp'];
-          $_SESSION['alamat']          = $hasil['alamat'];
-          $_SESSION['role']         = $hasil['role'];
+        if (password_verify($password, $hasil['password'])) {
 
-          // jika login benar arahkan ke file sesuai role
-          if ($hasil['role'] == 'Admin') {
-            header("Location: app/admin/.");
-          exit;
-          } else {
-            header("Location: app/users/.");
-          exit;
-          }
-      }else {
-          // jika username/password salah
-          $error = true;
-      }
-    } 
-  } 
+            $_SESSION['login']    = true;
+            $_SESSION['id_akun']  = $hasil['id_akun'];
+            $_SESSION['nama']     = $hasil['nama'];
+            $_SESSION['username'] = $hasil['username'];
+            $_SESSION['email']    = $hasil['email'];
+            $_SESSION['no_hp']    = $hasil['no_hp'];
+            $_SESSION['alamat']   = $hasil['alamat'];
+            $_SESSION['role']     = $hasil['role'];
+
+            if ($hasil['role'] == 'Admin') {
+                header("Location: app/admin/.");
+                exit;
+            } else {
+                header("Location: app/users/.");
+                exit;
+            }
+
+        } else {
+            $error = true;
+        }
+
+    } else {
+        $error = true;
+    }
+
+}
 
 ?>
 
 <!DOCTYPE html>
-<html lang="id" data-bs-theme="auto">
-  <head>
+<html lang="id" data-bs-theme="dark">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <style>
-      body {
-        user-select: none;
-      }
-      img {
-        -webkit-user-drag: none;
-      }
-    </style>
+
     <link href="assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="assets/css/bootstrap-icons.min.css" rel="stylesheet">
-  </head>
-  <body>
+    <link href="assets/css/login.css" rel="stylesheet">
 
-    <main class="container d-flex justify-content-center align-items-center min-vh-100">
+</head>
+<body>
 
-      <div class="card animate__animated animate__flipInY animate__fast" style="width: 20rem;">
+<main class="container min-vh-100 d-flex justify-content-center align-items-center">
 
-        <form action="" method="post">
+    <section class="w-100" style="max-width:380px;">
 
-          <!-- HEADER -->
-          <div class="card-header bg-success text-center">
-            <img class="img"
-                style="width: 100px; height: 100px;"
-                src="assets/img/logo/g1W.png"
-                alt="">
-            <h3 class="mt-2">Login</h3>
-          </div>
+        <article
+            class="card login-card bg-dark border-0 rounded-5"
+            style="--bs-bg-opacity:.75;">
 
-          <!-- BODY -->
-          <div class="card-body">
+            <header class="card-body text-center pt-4 pb-0">
 
-            <div class="form-floating mb-3">
-              <input type="text" class="form-control" id="floatingInput" name="username" placeholder="Username" required>
-              <label for="floatingInput">Username</label>
-            </div>
+                <img
+                    src="assets/img/logo/g1W.png"
+                    alt="Logo"
+                    width="80"
+                    class="mb-3">
 
-            <div class="form-floating mb-3">
-              <input type="password" class="form-control" id="floatingPassword" name="password" placeholder="Password" required>
-              <label for="floatingPassword">Password</label>
-            </div>
+                <h1 class="h3 fw-bold mb-2">
+                    Selamat Datang
+                </h1>
 
-            <button class="btn btn-success w-100 py-2" type="submit" name="login">
-              Login
-            </button>
+                <p class="text-body-secondary mb-0">
+                    Silakan login untuk melanjutkan
+                </p>
 
-          </div>
+            </header>
 
-          <!-- FOOTER -->
-          <div class="card-footer text-body-secondary">
+            <section class="card-body px-4 pb-4">
 
-            <div class="d-flex justify-content-between">
-              <small>Belum punya akun?</small>
-              <small>&copy;Larissa Collection</small>
-            </div>
+                <form action="" method="POST">
 
-            <a href="register.php" class="text-info mt-1">
-              Register
-            </a>
+                    <?php if (isset($error)) : ?>
+                        <div class="alert alert-danger rounded-4 py-2 mb-3">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            Email atau password salah!
+                        </div>
+                    <?php endif; ?>
 
-          </div>
+                    <div class="form-floating mb-3">
+                        <input
+                            type="email"
+                            class="form-control"
+                            id="email"
+                            name="email"
+                            placeholder="Email"
+                            value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                            required>
 
-        </form>
+                        <label for="email">
+                            <i class="bi bi-envelope me-2"></i>Email
+                        </label>
+                    </div>
 
-      </div>
+                    <div class="input-group mb-4">
 
-    </main>
-    
-    <footer>
-      <script src="assets/js/bootstrap.bundle.min.js"></script>
-    </footer>
+                        <div class="form-floating flex-grow-1">
+                            <input
+                                type="password"
+                                class="form-control"
+                                id="password"
+                                name="password"
+                                placeholder="Password"
+                                required>
 
-  </body>
+                            <label for="password">
+                                <i class="bi bi-lock me-2"></i>Password
+                            </label>
+                        </div>
+
+                        <button
+                            class="btn btn-outline-warning"
+                            type="button"
+                            id="togglePassword">
+                            <i class="bi bi-eye"></i>
+                        </button>
+
+                    </div>
+
+                    <div class="d-grid">
+                        <button
+                            type="submit"
+                            name="login"
+                            class="btn btn-warning py-2 fw-semibold btn-login rounded-4">
+                            Login
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <span class="text-body-secondary">
+                            Belum punya akun?
+                        </span>
+
+                        <a
+                            href="register.php"
+                            class="link-warning text-decoration-none fw-semibold ms-1">
+                            Daftar sekarang
+                        </a>
+                    </div>
+
+                </form>
+
+            </section>
+
+            <footer class="text-center pb-3">
+                <small class="text-body-secondary">
+                    &copy;2026 Larissa Collection
+                </small>
+            </footer>
+
+        </article>
+
+    </section>
+
+</main>
+
+<script src="assets/js/login.js"></script>
+
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+
+</body>
 </html>

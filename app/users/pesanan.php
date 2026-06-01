@@ -6,7 +6,81 @@
   $halmut = './';
   $halpem = 'pesanan.php';
 
+  include '../../config/db/db.php';
+  include '../../config/controller/controller.php';
   include '../../assets/layout/users/header.php';
+
+  // ===== POST HANDLING =====
+
+  // Upload Design dari Modal
+  if (isset($_POST['tambah'])) {
+    $id_desain_custom = tambah_desain_custom($_POST, $_FILES);
+    $_SESSION['id_desain_custom_uploaded'] = $id_desain_custom;
+    $_SESSION['design_type'] = 'upload';
+    echo '<div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
+            <i class="bi bi-check-circle me-2"></i>Design berhasil disimpan!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>';
+  }
+
+  // Pilih Design dari Database
+  if (isset($_POST['pilih_design']) && !empty($_POST['pilih_design'])) {
+    $_SESSION['id_desain'] = intval($_POST['pilih_design']);
+    $_SESSION['design_type'] = 'existing';
+    echo '<div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
+            <i class="bi bi-check-circle me-2"></i>Design berhasil dipilih!
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>';
+  }
+
+  // Submit Pesanan
+  if (isset($_POST['submit_pesanan'])) {
+    // Validasi design sudah dipilih
+    if (!isset($_SESSION['design_type'])) {
+      $_SESSION['error'] = 'Silakan pilih atau upload design terlebih dahulu!';
+      echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-circle me-2"></i>' . $_SESSION['error'] . '
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>';
+    } else {
+      // Siapkan data untuk tambah_pesanan
+      $post_data = $_POST;
+      
+      // Jika pakai existing design, tambahkan ke post_data
+      if ($_SESSION['design_type'] === 'existing') {
+        $post_data['id_desain'] = $_SESSION['id_desain'];
+      }
+      
+      // Jika pakai upload design, tambahkan ke post_data
+      if ($_SESSION['design_type'] === 'upload') {
+        $post_data['id_desain_custom'] = $_SESSION['id_desain_custom_uploaded'];
+      }
+
+      // Insert pesanan
+      $id_pesanan = tambah_pesanan($post_data);
+      
+      // Clear session
+      unset($_SESSION['design_type']);
+      unset($_SESSION['id_desain']);
+      unset($_SESSION['id_desain_custom_uploaded']);
+
+      // Redirect ke halaman konfirmasi atau sukses
+      $_SESSION['success'] = 'Pesanan berhasil dibuat! ID Pesanan: ' . $id_pesanan;
+      header('Location: index.php?pesanan_success=1');
+      exit;
+    }
+  }
+
+  // Ambil data bahan dari database
+  $data_bahan = select("SELECT * FROM bahan ORDER BY jenis_bahan ASC");
+
+  // Ambil product ID berdasarkan nama produk dari URL
+  $nama_produk = htmlspecialchars($_GET['produk'] ?? 'Kaos');
+  $data_produk = select("SELECT id_produk FROM produk WHERE nama_produk = '$nama_produk' LIMIT 1");
+  $id_produk = !empty($data_produk) ? $data_produk[0]['id_produk'] : 1;
+
+  // Ambil desain berdasarkan product ID
+  $data_desain = select("SELECT * FROM desain WHERE id_produk = $id_produk ORDER BY nama_desain ASC");
 
 ?>
 
@@ -17,18 +91,18 @@
   <section aria-label="Judul">
     
     <div class="p-4 p-md-5 mb-4 mt-5 bg-body rounded shadow-sm">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <h2>Pesan <?= $_GET['produk'] ?> Sekarang</h2>
-        <p class="text-muted">Melayani kaos, hoodie, jaket, dan kemeja dengan kualitas terbaik.</p>
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h2>Pesan <?= $_GET['produk'] ?> Sekarang</h2>
+          <p class="text-muted">Melayani kaos, hoodie, jaket, dan kemeja dengan kualitas terbaik.</p>
+        </div>
+
+        <!-- <div class="col-md-4 text-md-end">
+          <span class="badge bg-success fs-6">Minimal Order: 12 pcs</span>
+        </div> -->
+
       </div>
-
-      <!-- <div class="col-md-4 text-md-end">
-        <span class="badge bg-success fs-6">Minimal Order: 12 pcs</span>
-      </div> -->
-
     </div>
-  </div>
 
   </section>
   
@@ -88,11 +162,13 @@
 
                     <div class="col-md-6">
                       <label class="form-label fw-medium">Bahan</label>
-                      <select class="form-select rounded-3">
-                        <option selected disabled>Pilih Bahan</option>
-                        <option>Cotton Combed</option>
-                        <option>Polyester</option>
-                        <option>Fleece</option>
+                      <select name="id_bahan" class="form-select rounded-3" required>
+                        <option value="" selected disabled>Pilih Bahan</option>
+                        <?php foreach($data_bahan as $bhn): ?>
+                          <option value="<?= $bhn['id_bahan'] ?>">
+                            <?= htmlspecialchars($bhn['jenis_bahan']) ?> - Rp <?= number_format($bhn['harga_bahan']) ?>
+                          </option>
+                        <?php endforeach; ?>
                       </select>
                     </div>
 
@@ -153,37 +229,37 @@
                             <!-- S -->
                             <div class="col">
                                 <label class="form-label fw-semibold">S</label>
-                                <input type="number" class="form-control text-center rounded-4" value="0" min="0">
+                                <input type="number" name="size_s" class="form-control text-center rounded-4" value="0" min="0">
                             </div>
 
                             <!-- M -->
                             <div class="col">
                                 <label class="form-label fw-semibold">M</label>
-                                <input type="number" class="form-control text-center rounded-4" value="0" min="0">
+                                <input type="number" name="size_m" class="form-control text-center rounded-4" value="0" min="0">
                             </div>
 
                             <!-- L -->
                             <div class="col">
                                 <label class="form-label fw-semibold">L</label>
-                                <input type="number" class="form-control text-center rounded-4" value="0" min="0">
+                                <input type="number" name="size_l" class="form-control text-center rounded-4" value="0" min="0">
                             </div>
 
                             <!-- XL -->
                             <div class="col">
                                 <label class="form-label fw-semibold">XL</label>
-                                <input type="number" class="form-control text-center rounded-4" value="0" min="0">
+                                <input type="number" name="size_xl" class="form-control text-center rounded-4" value="0" min="0">
                             </div>
 
                             <!-- XXL -->
                             <div class="col">
                                 <label class="form-label fw-semibold">XXL</label>
-                                <input type="number" class="form-control text-center rounded-4" value="0" min="0">
+                                <input type="number" name="size_xxl" class="form-control text-center rounded-4" value="0" min="0">
                             </div>
 
                             <!-- XXXL -->
                             <div class="col">
                                 <label class="form-label fw-semibold">XXXL</label>
-                                <input type="number" class="form-control text-center rounded-4" value="0" min="0">
+                                <input type="number" name="size_xxxl" class="form-control text-center rounded-4" value="0" min="0">
                             </div>
 
                         </div>
@@ -194,13 +270,14 @@
                 <div class="mb-4">
                   <label class="form-label fw-medium">Catatan Tambahan</label>
                   <textarea 
+                    name="catatan"
                     class="form-control rounded-3" 
                     rows="3"
                     placeholder="Contoh: warna hitam, sablon depan belakang, dll"></textarea>
                 </div>
 
                 <!-- BUTTON -->
-                <button class="btn btn-success w-100 py-3 rounded-3 fw-semibold">
+                <button type="submit" name="submit_pesanan" class="btn btn-success w-100 py-3 rounded-3 fw-semibold">
                   <i class="bi bi-cart-check me-2"></i>
                   Pembayaran & Konfirmasi
                 </button>
@@ -305,7 +382,7 @@
 
   <section aria-label="Modal">
     
-    <!-- Modal Tambah Akun -->
+    <!-- Modal Upload Desain -->
         <div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="ModalUpload" aria-hidden="true">
             <div class="modal-dialog modal-dialog-scrollable">
                 <div class="modal-content">
@@ -467,7 +544,67 @@
                 </div>
             </div>
         </div>
-    <!-- /Modal Tambah Akun -->
+    <!-- /Modal Upload Desain -->
+
+    <!-- Modal Pilih Design -->
+    <div class="modal fade" id="modalPilih" tabindex="-1" aria-labelledby="ModalPilih" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title" id="ModalPilih">Pilih Design untuk <?= htmlspecialchars($nama_produk) ?></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form method="post">
+                        <div class="row g-3">
+                            <?php 
+                              if (!empty($data_desain)):
+                                foreach($data_desain as $des): 
+                            ?>
+                            <div class="col-md-6">
+                                <div class="card border h-100 cursor-pointer design-card" data-id="<?= $des['id_desain'] ?>">
+                                    <div style="height: 150px; overflow: hidden; background: #f0f0f0;">
+                                        <img src="../../assets/img/desain/<?= htmlspecialchars($des['gambar_desain']) ?>" 
+                                             alt="<?= htmlspecialchars($des['nama_desain']) ?>" 
+                                             class="w-100 h-100 object-fit-cover">
+                                    </div>
+                                    <div class="card-body">
+                                        <h6 class="card-title"><?= htmlspecialchars($des['nama_desain']) ?></h6>
+                                        <p class="text-muted small mb-2"><?= htmlspecialchars(substr($des['deskripsi'], 0, 50)) ?></p>
+                                        <p class="fw-bold text-success">Rp <?= number_format($des['harga_desain']) ?></p>
+                                        <div class="form-check">
+                                            <input class="form-check-input design-radio" type="radio" name="pilih_design" value="<?= $des['id_desain'] ?>" id="design<?= $des['id_desain'] ?>">
+                                            <label class="form-check-label" for="design<?= $des['id_desain'] ?>">
+                                                Pilih Design Ini
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php 
+                                endforeach;
+                              else:
+                                echo '<div class="alert alert-info w-100">Belum ada design yang tersedia</div>';
+                              endif;
+                            ?>
+                        </div>
+
+                        <div class="modal-footer mt-4">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Pilih Design
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- /Modal Pilih Design -->
 
   </section>
 
