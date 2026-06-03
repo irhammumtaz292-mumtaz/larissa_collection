@@ -621,129 +621,230 @@
             return mysqli_affected_rows($db);
         }
 
-    // .Customer
+        // Pesanan Section
 
-    // Pesanan Section
+            // Tambah Desain Custom
+            function tambah_desain_custom($post, $files)
+            {
+                global $db;
 
-        // Tambah Desain Custom
-        function tambah_desain_custom($post, $files)
-        {
-            global $db;
+                // Customer - Gunakan dari session jika user login
+                if (isset($_SESSION['id_akun'])) {
+                    $id_akun = intval($_SESSION['id_akun']);
+                    $akun_data = select("SELECT id_customer FROM akun WHERE id_akun = $id_akun LIMIT 1");
+                    if (!empty($akun_data)) {
+                        $id_customer = intval($akun_data[0]['id_customer']);
+                    } else {
+                        return false;
+                    }
+                } else {
+                    // Fallback: buat customer baru jika belum login
+                    $nama   = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama'] ?? '')));
+                    $no_hp  = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['hp'] ?? '')));
+                    $alamat = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['alamat'] ?? '')));
 
-            // Customer (buat jika belum ada berdasarkan no_hp)
-            $nama   = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama'] ?? '')));
-            $no_hp  = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['hp'] ?? '')));
-            $alamat = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['alamat'] ?? '')));
-
-            // coba cari customer berdasarkan no_hp
-            $query = "SELECT id_customer FROM customer WHERE no_hp = '$no_hp' LIMIT 1";
-            $res = mysqli_query($db, $query);
-            if ($row = mysqli_fetch_assoc($res)) {
-                $id_customer = $row['id_customer'];
-            } else {
-                $queryIns = "INSERT INTO customer VALUES(NULL, '$nama', '$no_hp', '$alamat')";
-                mysqli_query($db, $queryIns);
-                $id_customer = mysqli_insert_id($db);
-            }
-
-            // Upload design images
-            $gambar_depan = upload_foto('tampak_depan', 'desain') ?? '';
-            $gambar_belakang = upload_foto('tampak_belakang', 'desain') ?? '';
-            $gambar_kanan = upload_foto('tampak_kanan', 'desain') ?? '';
-            $gambar_kiri = upload_foto('tampak_kiri', 'desain') ?? '';
-
-            // Upload multiple logos
-            $logoFiles = [];
-            if (isset($files['logo'])) {
-                $logos = $files['logo'];
-                $count = is_array($logos['name']) ? count($logos['name']) : 0;
-                for ($i = 0; $i < $count; $i++) {
-                    if ($logos['error'][$i] === UPLOAD_ERR_OK) {
-                        $tmpName = $logos['tmp_name'][$i];
-                        $orig = $logos['name'][$i];
-                        $ext = pathinfo($orig, PATHINFO_EXTENSION);
-                        $newName = uniqid() . "." . $ext;
-                        $uploadPath = __DIR__ . '/../../assets/img/desain/';
-                        if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
-                        move_uploaded_file($tmpName, $uploadPath . $newName);
-                        $logoFiles[] = $newName;
+                    $query = "SELECT id_customer FROM customer WHERE no_hp = '$no_hp' LIMIT 1";
+                    $res = mysqli_query($db, $query);
+                    if ($row = mysqli_fetch_assoc($res)) {
+                        $id_customer = $row['id_customer'];
+                    } else {
+                        $queryIns = "INSERT INTO customer VALUES(NULL, '$nama', '$no_hp', '$alamat')";
+                        mysqli_query($db, $queryIns);
+                        $id_customer = mysqli_insert_id($db);
                     }
                 }
-            }
 
-            $gambar_logo = mysqli_real_escape_string($db, json_encode($logoFiles));
+                // Collect all uploaded files
+                $uploadedFiles = [];
+                
+                // Upload design images
+                $gambar_depan = upload_foto('tampak_depan', 'desain');
+                if ($gambar_depan) $uploadedFiles['depan'] = $gambar_depan;
+                
+                $gambar_belakang = upload_foto('tampak_belakang', 'desain');
+                if ($gambar_belakang) $uploadedFiles['belakang'] = $gambar_belakang;
+                
+                $gambar_kanan = upload_foto('tampak_kanan', 'desain');
+                if ($gambar_kanan) $uploadedFiles['kanan'] = $gambar_kanan;
+                
+                $gambar_kiri = upload_foto('tampak_kiri', 'desain');
+                if ($gambar_kiri) $uploadedFiles['kiri'] = $gambar_kiri;
 
-            $catatan_depan = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_depan'] ?? '')));
-            $catatan_belakang = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_belakang'] ?? '')));
-            $catatan_kanan = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_kanan'] ?? '')));
-            $catatan_kiri = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_kiri'] ?? '')));
-            $catatan_logo = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['catatan_logo'] ?? '')));
+                // Upload multiple logos
+                $logoFiles = [];
+                if (isset($_FILES['logo'])) {
+                    $logos = $_FILES['logo'];
+                    $count = is_array($logos['name']) ? count($logos['name']) : 0;
+                    for ($i = 0; $i < $count; $i++) {
+                        if ($logos['error'][$i] === UPLOAD_ERR_OK) {
+                            $tmpName = $logos['tmp_name'][$i];
+                            $orig = $logos['name'][$i];
+                            $ext = pathinfo($orig, PATHINFO_EXTENSION);
+                            $newName = uniqid() . "." . $ext;
+                            $uploadPath = __DIR__ . '/../../assets/img/desain/';
+                            if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
+                            move_uploaded_file($tmpName, $uploadPath . $newName);
+                            $logoFiles[] = $newName;
+                        }
+                    }
+                }
+                
+                if (!empty($logoFiles)) {
+                    $uploadedFiles['logo'] = $logoFiles;
+                }
 
-            $queryDesain = "INSERT INTO desain_custom (id_customer, gambar_depan, catatan_depan, gambar_belakang, catatan_belakang, gambar_kanan, catatan_kanan, gambar_kiri, catatan_kiri, gambar_logo, catatan_logo, status_desain)
-                VALUES($id_customer, '$gambar_depan', '$catatan_depan', '$gambar_belakang', '$catatan_belakang', '$gambar_kanan', '$catatan_kanan', '$gambar_kiri', '$catatan_kiri', '$gambar_logo', '$catatan_logo', 'Menunggu')";
+                // Format files as JSON or NULL
+                $filesJson = !empty($uploadedFiles) ? mysqli_real_escape_string($db, json_encode($uploadedFiles)) : NULL;
+                $filesValue = $filesJson !== NULL ? "'$filesJson'" : "NULL";
 
-            mysqli_query($db, $queryDesain);
-            return mysqli_insert_id($db);
-        }
+                // Combine all catatan
+                $catatan_parts = [];
+                if (!empty($post['catatan_depan'])) $catatan_parts[] = 'Depan: ' . htmlspecialchars(strip_tags($post['catatan_depan']));
+                if (!empty($post['catatan_belakang'])) $catatan_parts[] = 'Belakang: ' . htmlspecialchars(strip_tags($post['catatan_belakang']));
+                if (!empty($post['catatan_kanan'])) $catatan_parts[] = 'Kanan: ' . htmlspecialchars(strip_tags($post['catatan_kanan']));
+                if (!empty($post['catatan_kiri'])) $catatan_parts[] = 'Kiri: ' . htmlspecialchars(strip_tags($post['catatan_kiri']));
+                if (!empty($post['catatan_logo'])) $catatan_parts[] = 'Logo: ' . htmlspecialchars(strip_tags($post['catatan_logo']));
+                
+                $catatan = !empty($catatan_parts) ? mysqli_real_escape_string($db, implode("\n", $catatan_parts)) : NULL;
+                $catatanValue = $catatan !== NULL ? "'$catatan'" : "NULL";
 
-        // Tambah Pesanan
-        function tambah_pesanan($post)
-        {
-            global $db;
+                $queryDesain = "INSERT INTO desain_custom (id_customer, files, catatan, status_desain)
+                    VALUES($id_customer, $filesValue, $catatanValue, 'Menunggu')";
 
-            // Customer
-            $nama   = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama'] ?? '')));
-            $no_hp  = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['hp'] ?? '')));
-            $alamat = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['alamat'] ?? '')));
-
-            // coba cari customer berdasarkan no_hp
-            $query = "SELECT id_customer FROM customer WHERE no_hp = '$no_hp' LIMIT 1";
-            $res = mysqli_query($db, $query);
-            if ($row = mysqli_fetch_assoc($res)) {
-                $id_customer = $row['id_customer'];
-            } else {
-                $queryIns = "INSERT INTO customer VALUES(NULL, '$nama', '$no_hp', '$alamat')";
-                mysqli_query($db, $queryIns);
-                $id_customer = mysqli_insert_id($db);
-            }
-
-            // Design (uploaded or existing)
-            $id_desain = isset($post['id_desain']) ? intval($post['id_desain']) : null;
-            $id_desain_custom = isset($post['id_desain_custom']) ? intval($post['id_desain_custom']) : null;
-
-            // Bahan
-            $id_bahan = intval($post['id_bahan'] ?? 0);
-
-            // Sizes
-            $sizes = [
-                'S' => intval($post['size_s'] ?? 0),
-                'M' => intval($post['size_m'] ?? 0),
-                'L' => intval($post['size_l'] ?? 0),
-                'XL' => intval($post['size_xl'] ?? 0),
-                'XXL' => intval($post['size_xxl'] ?? 0),
-                'XXXL' => intval($post['size_xxxl'] ?? 0),
-            ];
-            $jumlah_beli = array_sum($sizes);
-            $ukuran_json = mysqli_real_escape_string($db, json_encode($sizes));
-
-            // Harga dasar dari bahan
-            $harga = 0;
-            if ($id_bahan) {
-                $q = mysqli_query($db, "SELECT harga_bahan FROM bahan WHERE id_bahan = $id_bahan LIMIT 1");
-                if ($r = mysqli_fetch_assoc($q)) {
-                    $harga_bahan = intval($r['harga_bahan']);
-                    $harga = $harga_bahan * $jumlah_beli;
+                if (mysqli_query($db, $queryDesain)) {
+                    return mysqli_insert_id($db);
+                } else {
+                    return false;
                 }
             }
 
-            // Insert pesanan - id_desain_custom bisa null jika pilih design existing
-            $queryPesanan = "INSERT INTO pesanan (id_customer, id_bahan, id_desain, id_desain_custom, jumlah_beli, ukuran, harga)
-                VALUES($id_customer, $id_bahan, " . ($id_desain ? $id_desain : 'NULL') . ", " . ($id_desain_custom ? $id_desain_custom : 'NULL') . ", $jumlah_beli, '$ukuran_json', $harga)";
+            // Tambah Pesanan
+            function tambah_pesanan($post)
+            {
+                global $db;
 
-            mysqli_query($db, $queryPesanan);
-            return mysqli_insert_id($db);
-        }
+                // Customer: Ambil id_customer dari user yang login via session
+                // User sudah ter-autentikasi, jadi gunakan id_customer yang sudah terdaftar
+                if (!isset($_SESSION['id_akun'])) {
+                    return false; // User tidak login
+                }
+                
+                $id_akun = intval($_SESSION['id_akun']);
+                $akun_data = select("SELECT id_customer FROM akun WHERE id_akun = $id_akun LIMIT 1");
+                
+                if (empty($akun_data)) {
+                    return false; // Akun tidak valid
+                }
+                
+                $id_customer = intval($akun_data[0]['id_customer']);
+                
+                // Update data customer dengan info terbaru dari form (jika ada perubahan)
+                $nama   = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama'] ?? '')));
+                $no_hp  = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['hp'] ?? '')));
+                $alamat = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['alamat'] ?? '')));
+                
+                $queryUpdate = "UPDATE customer SET nama = '$nama', no_hp = '$no_hp', alamat = '$alamat' WHERE id_customer = $id_customer";
+                mysqli_query($db, $queryUpdate);
 
-    // .Pesanan Section
+                // Produk
+                $id_produk = intval($post['id_produk'] ?? 1);
+
+                // Design (uploaded or existing)
+                $id_desain = isset($post['id_desain']) ? intval($post['id_desain']) : null;
+                $id_desain_custom = isset($post['id_desain_custom']) ? intval($post['id_desain_custom']) : null;
+
+                // Bahan
+                $id_bahan = intval($post['id_bahan'] ?? 0);
+
+                // Sizes
+                $sizes = [
+                    'S' => intval($post['size_s'] ?? 0),
+                    'M' => intval($post['size_m'] ?? 0),
+                    'L' => intval($post['size_l'] ?? 0),
+                    'XL' => intval($post['size_xl'] ?? 0),
+                    'XXL' => intval($post['size_xxl'] ?? 0),
+                    'XXXL' => intval($post['size_xxxl'] ?? 0),
+                ];
+                $jumlah_beli = array_sum($sizes);
+                $ukuran_json = mysqli_real_escape_string($db, json_encode($sizes));
+
+                // Harga dasar dari bahan
+                $harga = 0;
+                if ($id_bahan) {
+                    $q = mysqli_query($db, "SELECT harga_bahan FROM bahan WHERE id_bahan = $id_bahan LIMIT 1");
+                    if ($r = mysqli_fetch_assoc($q)) {
+                        $harga_bahan = intval($r['harga_bahan']);
+                        $harga = $harga_bahan * $jumlah_beli;
+                    }
+                }
+
+                $harga_dp = intval($post['harga_dp'] ?? 0);
+
+                // Insert pesanan - id_desain_custom bisa null jika pilih design existing
+                $queryPesanan = "INSERT INTO pesanan (id_customer, id_produk, id_bahan, id_desain, id_desain_custom, jumlah_beli, ukuran, harga, harga_dp)
+                    VALUES($id_customer, $id_produk, $id_bahan, " . ($id_desain ? $id_desain : 'NULL') . ", " . ($id_desain_custom ? $id_desain_custom : 'NULL') . ", $jumlah_beli, '$ukuran_json', $harga, $harga_dp)";
+
+                mysqli_query($db, $queryPesanan);
+                return mysqli_insert_id($db);
+            }
+
+            // Tambah Transaksi
+            // - Menerima data metode pembayaran dan total harga
+            // - Menyimpan record transaksi terkait `pesanan`
+            // - Jika tersedia, simpan nama file bukti pembayaran (gambar) ke kolom `bukti_pembayaran`
+            // Parameter:
+            //   $post: array POST data dari form
+            //   $id_pesanan: id pesanan yang terkait
+            //   $total_harga: total harga pesanan (dari tabel pesanan)
+            //   $bukti_filename: (optional) nama file bukti yang sudah di-upload
+            function tambah_transaksi($post, $id_pesanan, $total_harga, $bukti_filename = null)
+            {
+                global $db;
+
+                $metode = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['metode_pembayaran'] ?? '')));
+
+                if (empty($metode) || $id_pesanan <= 0) {
+                    return false;
+                }
+
+                // Jika file bukti telah di-upload dan diberikan, simpan nama file tersebut.
+                // Jika tidak ada bukti file, isi deskripsi default berdasarkan metode (QRIS/VA dll.)
+                $bukti_pembayaran = '';
+                if (!empty($bukti_filename)) {
+                    // simpan nama file yang valid (string) ke kolom bukti_pembayaran
+                    $bukti_pembayaran = mysqli_real_escape_string($db, $bukti_filename);
+                } else {
+                    if ($metode === 'qris') {
+                        $bukti_pembayaran = 'QRIS';
+                    } elseif ($metode === 'virtual_account') {
+                        $bukti_pembayaran = 'VA BCA 1234567890';
+                    } else {
+                        $bukti_pembayaran = strtoupper($metode);
+                    }
+                }
+
+                $tanggal = date('Y-m-d');
+
+                // PERUBAHAN: jumlah_bayar dimulai dari 0 (belum ada pembayaran dari customer)
+                // Admin nanti yang akan update jumlah_bayar dan status saat mengkonfirmasi pembayaran
+                $queryTransaksi = "INSERT INTO transaksi (id_pesanan, metode_pembayaran, status_pembayaran, jumlah_bayar, bukti_pembayaran, tanggal_pembayaran)
+                    VALUES($id_pesanan, '$metode', 'Pending', 0, '$bukti_pembayaran', '$tanggal')";
+
+                mysqli_query($db, $queryTransaksi);
+                return mysqli_insert_id($db);
+            }
+
+            function update_harga_dp_pesanan($id_pesanan, $harga_dp)
+            {
+                global $db;
+                $harga_dp = intval($harga_dp);
+                $query = "UPDATE pesanan SET harga_dp = $harga_dp WHERE id_pesanan = $id_pesanan";
+                mysqli_query($db, $query);
+                return mysqli_affected_rows($db);
+            }
+
+        // .Pesanan Section
+
+    // .Customer
 
 ?>

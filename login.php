@@ -9,9 +9,13 @@ if (isset($_POST['login'])) {
     $email    = mysqli_real_escape_string($db, trim($_POST['email']));
     $password = $_POST['password'];
 
+    // Query dengan JOIN ke customer table untuk mendapatkan nama, no_hp, alamat
     $result = mysqli_query(
         $db,
-        "SELECT * FROM akun WHERE email = '$email'"
+        "SELECT a.*, c.nama, c.no_hp, c.alamat 
+         FROM akun a 
+         JOIN customer c ON a.id_customer = c.id_customer 
+         WHERE a.email = '$email'"
     );
 
     if (mysqli_num_rows($result) == 1) {

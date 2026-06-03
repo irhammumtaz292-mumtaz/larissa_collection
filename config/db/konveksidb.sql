@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 01, 2026 at 04:05 PM
+-- Generation Time: Jun 02, 2026 at 02:33 AM
 -- Server version: 11.4.10-MariaDB-log
 -- PHP Version: 8.5.5
 
@@ -129,16 +129,8 @@ INSERT INTO `desain` (`id_desain`, `id_produk`, `nama_desain`, `gambar_desain`, 
 CREATE TABLE `desain_custom` (
   `id_desain_custom` int(11) NOT NULL,
   `id_customer` int(11) NOT NULL,
-  `gambar_depan` varchar(255) NOT NULL,
-  `catatan_depan` text DEFAULT NULL,
-  `gambar_belakang` varchar(255) NOT NULL,
-  `catatan_belakang` text DEFAULT NULL,
-  `gambar_kanan` varchar(255) NOT NULL,
-  `catatan_kanan` text DEFAULT NULL,
-  `gambar_kiri` varchar(255) NOT NULL,
-  `catatan_kiri` text DEFAULT NULL,
-  `gambar_logo` text NOT NULL,
-  `catatan_logo` text DEFAULT NULL,
+  `files` longtext DEFAULT NULL,
+  `catatan` longtext DEFAULT NULL,
   `status_desain` enum('Menunggu','Diproses','Selesai','Ditolak') DEFAULT 'Menunggu',
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -164,6 +156,7 @@ CREATE TABLE `detail_pesanan` (
 CREATE TABLE `pesanan` (
   `id_pesanan` int(11) NOT NULL,
   `id_customer` int(11) NOT NULL,
+  `id_produk` int(11) NOT NULL,
   `id_bahan` int(11) NOT NULL,
   `id_desain` int(11) DEFAULT NULL,
   `id_desain_custom` int(11) DEFAULT NULL,
@@ -172,13 +165,6 @@ CREATE TABLE `pesanan` (
   `harga` int(11) NOT NULL,
   `harga_dp` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `pesanan`
---
-
-INSERT INTO `pesanan` (`id_pesanan`, `id_customer`, `id_bahan`, `id_desain`, `id_desain_custom`, `jumlah_beli`, `ukuran`, `harga`, `harga_dp`) VALUES
-(1, 21, 4, 2, NULL, 37, '{\"S\":12,\"M\":25,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 2960000, NULL);
 
 -- --------------------------------------------------------
 
@@ -296,7 +282,8 @@ ALTER TABLE `pesanan`
   ADD KEY `id_customer` (`id_customer`,`id_bahan`,`id_desain`),
   ADD KEY `id_desain` (`id_desain`),
   ADD KEY `id_bahan` (`id_bahan`),
-  ADD KEY `id_desain_custom` (`id_desain_custom`);
+  ADD KEY `id_desain_custom` (`id_desain_custom`),
+  ADD KEY `id_produk` (`id_produk`);
 
 --
 -- Indexes for table `produk`
@@ -398,6 +385,12 @@ ALTER TABLE `bahan`
   ADD CONSTRAINT `bahan_ibfk_1` FOREIGN KEY (`id_warna`) REFERENCES `warna` (`id_warna`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
+-- Constraints for table `desain`
+--
+ALTER TABLE `desain`
+  ADD CONSTRAINT `desain_ibfk_1` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id_produk`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
 -- Constraints for table `desain_custom`
 --
 ALTER TABLE `desain_custom`
@@ -416,7 +409,8 @@ ALTER TABLE `pesanan`
   ADD CONSTRAINT `pesanan_ibfk_1` FOREIGN KEY (`id_customer`) REFERENCES `customer` (`id_customer`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `pesanan_ibfk_2` FOREIGN KEY (`id_desain`) REFERENCES `desain` (`id_desain`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `pesanan_ibfk_3` FOREIGN KEY (`id_bahan`) REFERENCES `bahan` (`id_bahan`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `pesanan_ibfk_4` FOREIGN KEY (`id_desain_custom`) REFERENCES `desain_custom` (`id_desain_custom`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `pesanan_ibfk_4` FOREIGN KEY (`id_desain_custom`) REFERENCES `desain_custom` (`id_desain_custom`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `pesanan_ibfk_5` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id_produk`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `transaksi`

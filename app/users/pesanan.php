@@ -1,119 +1,147 @@
 <?php
 
+  // Mulai session: diperlukan untuk mengakses data user yang login
   session_start();
 
+  // Metadata halaman (judul dan rute relatif) digunakan di header/layout
   $title = 'Pemesanan Konveksi';
   $halmut = './';
   $halpem = 'pesanan.php';
 
-  include '../../config/db/db.php';
-  include '../../config/controller/controller.php';
+  // Ambil data user dari session jika tersedia dan lakukan sanitasi sebelum ditampilkan
+  // Nilai kosong digunakan sebagai fallback apabila session belum menyimpan data
+  $user_nama = isset($_SESSION['nama']) ? htmlspecialchars($_SESSION['nama']) : '';
+  $user_hp = isset($_SESSION['no_hp']) ? htmlspecialchars($_SESSION['no_hp']) : '';
+  $user_alamat = isset($_SESSION['alamat']) ? htmlspecialchars($_SESSION['alamat']) : '';
+
+  // Sertakan header bersama (navbar, stylesheet, dll.)
   include '../../assets/layout/users/header.php';
 
-  // ===== POST HANDLING =====
+  // Jika salah satu data pemesan kosong di session, coba ambil dari tabel customer melalui id_akun
+  // Fungsi `select()` adalah helper yang mengembalikan array hasil query
+  if (empty($user_nama) || empty($user_hp) || empty($user_alamat)) {
+      if (isset($_SESSION['id_akun'])) {
+          $id_akun = intval($_SESSION['id_akun']);
+          // Gabungkan tabel akun -> customer untuk mendapatkan info kontak lengkap
+          $user_data = select("SELECT c.nama, c.no_hp, c.alamat FROM akun a JOIN customer c ON a.id_customer = c.id_customer WHERE a.id_akun = $id_akun LIMIT 1");
+          if (!empty($user_data)) {
+              // Hanya isi nilai yang masih kosong (biarkan nilai session tetap jika sudah ada)
+              $user_nama = $user_nama ?: htmlspecialchars($user_data[0]['nama']);
+              $user_hp = $user_hp ?: htmlspecialchars($user_data[0]['no_hp']);
+              $user_alamat = $user_alamat ?: htmlspecialchars($user_data[0]['alamat']);
+          }
+      }
+  }
 
-  // Upload Design dari Modal
+  // Ambil daftar 'bahan' dari database dengan JOIN warna untuk opsi select pada form
+  // Diurutkan berdasarkan jenis_bahan, kemudian warna agar opgroup teorganisir
+  $data_bahan = select("
+    SELECT b.*, w.nama_warna 
+    FROM bahan b
+    JOIN warna w ON b.id_warna = w.id_warna 
+    ORDER BY b.jenis_bahan ASC, w.nama_warna ASC
+  ");
+
+  // Tentukan produk berdasarkan parameter URL 'produk', dengan fallback 'Kaos'
+  $nama_produk = htmlspecialchars($_GET['produk'] ?? 'Kaos');
+  $data_produk = select("SELECT id_produk FROM produk WHERE nama_produk = '$nama_produk' LIMIT 1");
+  $id_produk = !empty($data_produk) ? $data_produk[0]['id_produk'] : 1;
+
+  // Ambil desain yang tersedia untuk produk ini (digunakan di modal pilih desain)
+  $data_desain = select("SELECT * FROM desain WHERE id_produk = $id_produk ORDER BY nama_desain ASC");
+
+  // ===== POST HANDLING =====
+  // Di bawah ini terdapat beberapa handler untuk form POST:
+  // 1) Upload design dari modal (tombol 'Simpan' di modal upload)
+  // 2) Pilih design dari daftar (modal pilih desain)
+  // 3) Submit pesanan (menghasilkan record pesanan + transaksi)
+
+  // 1) Upload Design dari Modal
+  // Memanggil helper tambah_desain_custom() yang menangani upload file dan menyimpan record desain custom
   if (isset($_POST['tambah'])) {
     $id_desain_custom = tambah_desain_custom($_POST, $_FILES);
+    // Simpan id desain hasil upload di session agar dapat dipakai saat submit pesanan
     $_SESSION['id_desain_custom_uploaded'] = $id_desain_custom;
     $_SESSION['design_type'] = 'upload';
+    // Tampilkan notifikasi sukses singkat
     echo '<div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
             <i class="bi bi-check-circle me-2"></i>Design berhasil disimpan!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>';
   }
 
-  // Pilih Design dari Database
+  // 2) Pilih Design dari Database
+  // Menangani pemilihan desain dari modal 'Pilih Design' — menyimpan id desain di session
   if (isset($_POST['pilih_design']) && !empty($_POST['pilih_design'])) {
     $_SESSION['id_desain'] = intval($_POST['pilih_design']);
     $_SESSION['design_type'] = 'existing';
+    // Tampilkan notifikasi sukses singkat
     echo '<div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
             <i class="bi bi-check-circle me-2"></i>Design berhasil dipilih!
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>';
   }
 
-  // Submit Pesanan
+  // 3) Submit Pesanan
+  // Proses utama: validasi desain, siapkan data, simpan pesanan dan transaksi
   if (isset($_POST['submit_pesanan'])) {
-    // Validasi design sudah dipilih
+    // Pastikan user sudah memilih atau mengupload design sebelumnya
     if (!isset($_SESSION['design_type'])) {
+      // Simpan pesan error ke session dan tampilkan alert
       $_SESSION['error'] = 'Silakan pilih atau upload design terlebih dahulu!';
       echo '<div class="alert alert-danger alert-dismissible fade show" role="alert">
               <i class="bi bi-exclamation-circle me-2"></i>' . $_SESSION['error'] . '
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>';
     } else {
-      // Siapkan data untuk tambah_pesanan
+      // Clone data POST agar tidak merusak original; tambahkan id_produk
       $post_data = $_POST;
+      $post_data['id_produk'] = $id_produk;
       
-      // Jika pakai existing design, tambahkan ke post_data
+      // Jika user memilih desain existing, sertakan id_desain
       if ($_SESSION['design_type'] === 'existing') {
         $post_data['id_desain'] = $_SESSION['id_desain'];
       }
       
-      // Jika pakai upload design, tambahkan ke post_data
+      // Jika user mengupload desain, sertakan id_desain_custom yang sudah diupload
       if ($_SESSION['design_type'] === 'upload') {
         $post_data['id_desain_custom'] = $_SESSION['id_desain_custom_uploaded'];
       }
 
-      // Insert pesanan
-      $id_pesanan = tambah_pesanan($post_data);
-      
-      // Clear session
-      unset($_SESSION['design_type']);
-      unset($_SESSION['id_desain']);
-      unset($_SESSION['id_desain_custom_uploaded']);
+      // SIMPAN DATA PESANAN KE SESSION SEBAGAI DRAFT (BELUM INSERT KE DB)
+      $_SESSION['draft_pesanan'] = $post_data;
+      $_SESSION['draft_design_type'] = $_SESSION['design_type'];
 
-      // Redirect ke halaman konfirmasi atau sukses
-      $_SESSION['success'] = 'Pesanan berhasil dibuat! ID Pesanan: ' . $id_pesanan;
-      header('Location: index.php?pesanan_success=1');
+      // REDIRECT KE HALAMAN KONFIRMASI
+      header('Location: konfirmasi_pesanan.php');
       exit;
     }
   }
-
-  // Ambil data bahan dari database
-  $data_bahan = select("SELECT * FROM bahan ORDER BY jenis_bahan ASC");
-
-  // Ambil product ID berdasarkan nama produk dari URL
-  $nama_produk = htmlspecialchars($_GET['produk'] ?? 'Kaos');
-  $data_produk = select("SELECT id_produk FROM produk WHERE nama_produk = '$nama_produk' LIMIT 1");
-  $id_produk = !empty($data_produk) ? $data_produk[0]['id_produk'] : 1;
-
-  // Ambil desain berdasarkan product ID
-  $data_desain = select("SELECT * FROM desain WHERE id_produk = $id_produk ORDER BY nama_desain ASC");
 
 ?>
 
 
 
-<main class="container mb-5">
+<main class="">
+  <section aria-label="Judul" class="mb-0" style="padding:10px 0;">
 
-  <section aria-label="Judul">
-    
-    <div class="p-4 p-md-5 mb-4 mt-5 bg-body rounded shadow-sm">
-      <div class="row align-items-center">
-        <div class="col-md-8">
-          <h2>Pesan <?= $_GET['produk'] ?> Sekarang</h2>
-          <p class="text-muted">Melayani kaos, hoodie, jaket, dan kemeja dengan kualitas terbaik.</p>
-        </div>
-
-        <!-- <div class="col-md-4 text-md-end">
-          <span class="badge bg-success fs-6">Minimal Order: 12 pcs</span>
-        </div> -->
-
+    <div class="p-2 mb-0 bg-body rounded-4 shadow-sm mx-auto" style="max-width: 760px; margin-bottom: 5px;">
+      <div class="text-center">
+        <h3 class="fw-semibold mb-1">Pesan <?= htmlspecialchars($nama_produk) ?> Sekarang</h3>
+        <p class="text-muted mb-0">Melayani kaos, hoodie, jaket, dan kemeja dengan kualitas terbaik.</p>
       </div>
     </div>
 
   </section>
-  
-  <section aria-label="Form Pemesanan">
-  
-      <div class="row g-4">
+
+  <section class="py-0" style="padding:5px 0 !important;" aria-label="Form Pemesanan">
+      <div class="container">
+          <div class="row justify-content-center g-4">
 
         <!-- FORM -->
-        <div class="col-lg-7">
-          <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4">
+        <div class="col-xl-8 col-lg-9">
+          <div class="card border-0 shadow-lg rounded-5">
+            <div class="card-body p-5">
 
               <!-- HEADER -->
               <div class="mb-4">
@@ -137,17 +165,17 @@
                   <div class="row g-3">
                     <div class="col-md-6">
                       <label class="form-label fw-medium">Nama Lengkap</label>
-                      <input type="text" name="nama" class="form-control rounded-3" placeholder="Masukkan nama" required>
+                      <input type="text" name="nama" class="form-control rounded-3" placeholder="Masukkan nama" value="<?= $user_nama ?>" required>
                     </div>
 
                     <div class="col-md-6">
                       <label class="form-label fw-medium">No HP</label>
-                      <input type="number" name="hp" class="form-control rounded-3" placeholder="08xxxxxxxxxx" required>
+                      <input type="number" name="hp" class="form-control rounded-3" placeholder="08xxxxxxxxxx" value="<?= $user_hp ?>" required>
                     </div>
 
                     <div class="col-12">
                       <label class="form-label fw-medium">Alamat</label>
-                      <textarea name="alamat" class="form-control rounded-3" rows="3" placeholder="Masukkan alamat lengkap"></textarea>
+                      <textarea name="alamat" class="form-control rounded-3" rows="3" placeholder="Masukkan alamat lengkap"><?= $user_alamat ?></textarea>
                     </div>
                   </div>
                 </div>
@@ -161,15 +189,27 @@
                   <div class="row g-3">
 
                     <div class="col-md-6">
-                      <label class="form-label fw-medium">Bahan</label>
+                      <label class="form-label fw-medium">Bahan & Warna</label>
                       <select name="id_bahan" class="form-select rounded-3" required>
                         <option value="" selected disabled>Pilih Bahan</option>
-                        <?php foreach($data_bahan as $bhn): ?>
+                        <?php 
+                          $prev_jenis = '';
+                          $close_group = false;
+                          foreach($data_bahan as $bhn):
+                            // Jika jenis bahan berbeda, tutup optgroup sebelumnya dan buka yang baru
+                            if ($prev_jenis !== $bhn['jenis_bahan']) {
+                              if ($close_group) echo '</optgroup>';
+                              echo '<optgroup label="' . htmlspecialchars($bhn['jenis_bahan']) . '">';
+                              $close_group = true;
+                              $prev_jenis = $bhn['jenis_bahan'];
+                            }
+                        ?>
                           <option value="<?= $bhn['id_bahan'] ?>">
-                            <?= htmlspecialchars($bhn['jenis_bahan']) ?> - Rp <?= number_format($bhn['harga_bahan']) ?>
+                            <?= htmlspecialchars($bhn['nama_warna']) ?> - Rp <?= number_format($bhn['harga_bahan']) ?>
                           </option>
-                        <?php endforeach; ?>
+                        <?php endforeach; if ($close_group) echo '</optgroup>'; ?>
                       </select>
+                      <small class="text-muted d-block mt-2">Memilih bahan akan menampilkan pilihan warna tersedia</small>
                     </div>
 
                   </div>
@@ -186,7 +226,7 @@
                     <div class="col-md-6">
                       <button 
                         type="button"
-                        class="btn btn-outline-primary w-100 rounded-3 py-3"
+                        class="btn btn-outline-warning w-100 rounded-pill py-3 fw-semibold"
                         data-bs-toggle="modal"
                         data-bs-target="#modalUpload">
 
@@ -198,7 +238,7 @@
                     <div class="col-md-6">
                       <button 
                         type="button"
-                        class="btn btn-outline-dark w-100 rounded-3 py-3"
+                        class="btn btn-outline-secondary w-100 rounded-pill py-3 fw-semibold"
                         data-bs-toggle="modal"
                         data-bs-target="#modalPilih">
 
@@ -266,6 +306,8 @@
 
                     </div>
 
+                <input type="hidden" name="id_produk" value="<?= $id_produk ?>">
+
                 <!-- CATATAN -->
                 <div class="mb-4">
                   <label class="form-label fw-medium">Catatan Tambahan</label>
@@ -277,7 +319,7 @@
                 </div>
 
                 <!-- BUTTON -->
-                <button type="submit" name="submit_pesanan" class="btn btn-success w-100 py-3 rounded-3 fw-semibold">
+                <button type="submit" name="submit_pesanan" class="btn btn-warning w-100 py-3 rounded-pill fw-semibold text-dark">
                   <i class="bi bi-cart-check me-2"></i>
                   Pembayaran & Konfirmasi
                 </button>
@@ -286,94 +328,6 @@
 
             </div>
           </div>
-        </div>
-
-        <!-- SIDEBAR -->
-        <div class="col-lg-5">
-
-          <!-- ESTIMASI -->
-          <div class="card border-0 shadow-sm rounded-4 mb-4">
-            <div class="card-body p-4">
-
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-success bg-opacity-10 text-success rounded-3 p-2 me-3">
-                  <i class="bi bi-cash-stack fs-5"></i>
-                </div>
-
-                <div>
-                  <h5 class="fw-bold mb-0">Estimasi Harga</h5>
-                  <small class="text-muted">Harga per pcs</small>
-                </div>
-              </div>
-
-              <ul class="list-group list-group-flush">
-
-                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                  <span>Kaos</span>
-                  <span class="badge bg-light text-dark">Rp 50k</span>
-                </li>
-
-                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                  <span>Kemeja</span>
-                  <span class="badge bg-light text-dark">Rp 80k</span>
-                </li>
-
-                <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
-                  <span>Hoodie</span>
-                  <span class="badge bg-light text-dark">Rp 120k</span>
-                </li>
-
-              </ul>
-
-              <div class="alert alert-light border mt-3 mb-0 small">
-                Harga dapat berubah tergantung jumlah pesanan dan tingkat kesulitan desain.
-              </div>
-
-            </div>
-          </div>
-
-          <!-- KEUNGGULAN -->
-          <div class="card border-0 shadow-sm rounded-4">
-            <div class="card-body p-4">
-
-              <div class="d-flex align-items-center mb-3">
-                <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-2 me-3">
-                  <i class="bi bi-stars fs-5"></i>
-                </div>
-
-                <div>
-                  <h5 class="fw-bold mb-0">Kenapa Pilih Kami?</h5>
-                  <small class="text-muted">Keunggulan layanan kami</small>
-                </div>
-              </div>
-
-              <ul class="list-group list-group-flush">
-
-                <li class="list-group-item px-0 border-0">
-                  <i class="bi bi-check-circle-fill text-success me-2"></i>
-                  Bahan Premium
-                </li>
-
-                <li class="list-group-item px-0 border-0">
-                  <i class="bi bi-check-circle-fill text-success me-2"></i>
-                  Jahitan Rapi
-                </li>
-
-                <li class="list-group-item px-0 border-0">
-                  <i class="bi bi-check-circle-fill text-success me-2"></i>
-                  Bisa Custom Design
-                </li>
-
-                <li class="list-group-item px-0 border-0">
-                  <i class="bi bi-check-circle-fill text-success me-2"></i>
-                  Harga Terjangkau
-                </li>
-
-              </ul>
-
-            </div>
-          </div>
-
         </div>
 
       </div>

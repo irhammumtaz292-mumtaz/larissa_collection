@@ -20,12 +20,13 @@
     <link href="../../assets/css/bootstrap.min.css" rel="stylesheet">
     <link href="../../assets/css/bootstrap-icons.min.css" rel="stylesheet">
     <link href="../../assets/css/styles.css" rel="stylesheet">
+    <link href="../../assets/css/pesanan.css" rel="stylesheet">
 </head>
 <body id="page-top">
 
     <!-- HEADER -->
     <header class="sticky-top">
-        <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark" id="mainNav">
             <div class="container">
                 <a class="navbar-brand" href="#page-top">Larisa Collection</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,9 +46,10 @@
                                 <span class="fw-semibold"><?= htmlspecialchars($_SESSION['username'] ?? 'User'); ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                                <li><a class="dropdown-item" href="kelola_akun.php">Kelola Data Akun</a></li>
+                                <li><a class="dropdown-item" href="riwayat_pesanan.php?id_akun=<?= $_SESSION['id_akun'] ?? '' ?>"><i class="bi bi-receipt me-2"></i>Riwayat Pesanan</a></li>
+                                <li><a class="dropdown-item" href="kelola_akun.php?id_akun=<?= $_SESSION['id_akun'] ?? '' ?>"><i class="bi bi-person-gear me-2"></i>Kelola Data Akun</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="../../logout.php">Sign Out</a></li>
+                                <li><a class="dropdown-item text-danger" href="../../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
                             </ul>
                         </div>
                     </div>

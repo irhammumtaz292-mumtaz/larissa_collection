@@ -1,0 +1,28 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^php test_db\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php migration_step1\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php migration_step2\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php migration_step3\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php test_full\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php final_report\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
