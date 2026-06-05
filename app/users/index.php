@@ -24,6 +24,42 @@
             </div>
         </header>
 
+        <!-- SERVICES -->
+        <section class="page-section" id="services">
+            <div class="container">
+                <div class="text-center">
+                    <h2 class="section-heading text-uppercase">Layanan Kami</h2>
+                    <h3 class="section-subheading text-muted">Desain siap pakai dan custom order untuk semua kebutuhan.</h3>
+                </div>
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <span class="fa-stack fa-4x">
+                            <i class="fas fa-circle fa-stack-2x text-primary"></i>
+                            <i class="fas fa-tshirt fa-stack-1x fa-inverse"></i>
+                        </span>
+                        <h4 class="my-3">Pakaian Custom</h4>
+                        <p class="text-muted">Kaos, hoodie, jaket, dan seragam sesuai kebutuhan Anda.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="fa-stack fa-4x">
+                            <i class="fas fa-circle fa-stack-2x text-primary"></i>
+                            <i class="fas fa-palette fa-stack-1x fa-inverse"></i>
+                        </span>
+                        <h4 class="my-3">Desain Kreatif</h4>
+                        <p class="text-muted">Tim desain siap membantu dari konsep sampai produksi.</p>
+                    </div>
+                    <div class="col-md-4">
+                        <span class="fa-stack fa-4x">
+                            <i class="fas fa-circle fa-stack-2x text-primary"></i>
+                            <i class="fas fa-truck fa-stack-1x fa-inverse"></i>
+                        </span>
+                        <h4 class="my-3">Pengiriman Cepat</h4>
+                        <p class="text-muted">Proses produksi cepat dan pengiriman dapat diandalkan.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- KATALOG -->
         <section id="katalog" class="page-section bg-light py-5">
             <div class="container">
@@ -90,6 +126,59 @@
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
+            </div>
+        </section>
+
+         <!-- ABOUT -->
+        <section class="page-section" id="about">
+            <div class="container">
+                <div class="text-center">
+                    <h2 class="section-heading text-uppercase">Tentang Kami</h2>
+                    <h3 class="section-subheading text-muted">Melayani konveksi berkualitas dengan proses mudah dan hasil profesional.</h3>
+                </div>
+                <ul class="timeline">
+                    <li>
+                        <div class="timeline-image"><img class="rounded-circle img-fluid" src="assets/img/about/1.jpg" alt="..." /></div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h4>2012</h4>
+                                <h4 class="subheading">Awal Berdiri</h4>
+                            </div>
+                            <div class="timeline-body"><p class="text-muted">Memulai usaha konveksi dengan fokus kualitas dan kepuasan pelanggan.</p></div>
+                        </div>
+                    </li>
+                    <li class="timeline-inverted">
+                        <div class="timeline-image"><img class="rounded-circle img-fluid" src="assets/img/about/2.jpg" alt="..." /></div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h4>2026</h4>
+                                <h4 class="subheading">Pengembangan Layanan</h4>
+                            </div>
+                            <div class="timeline-body"><p class="text-muted">Memperluas layanan ke desain custom dan produksi massal.</p></div>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="timeline-image"><img class="rounded-circle img-fluid" src="assets/img/about/3.jpg" alt="..." /></div>
+                        <div class="timeline-panel">
+                            <div class="timeline-heading">
+                                <h4>2026</h4>
+                                <h4 class="subheading">Solusi Lengkap</h4>
+                            </div>
+                            <div class="timeline-body"><p class="text-muted">Menjadi pilihan pelanggan untuk produksi seragam, kaos, dan merch.</p></div>
+                        </div>
+                    </li>
+                    <li class="timeline-inverted">
+                        <div class="timeline-image">
+                            <h4>
+                                Be Part
+                                <br />
+                                Of Our
+                                <br />
+                                Story!
+                            </h4>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </section>
 

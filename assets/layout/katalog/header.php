@@ -35,9 +35,8 @@
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav text-uppercase ms-auto py-4 py-lg-0">
                         <li class="nav-item"><a class="nav-link" href="#services">Layanan</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#portfolio">Katalog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#katalog">Katalog</a></li>
                         <li class="nav-item"><a class="nav-link" href="#about">Tentang</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#team">Team</a></li>
                         <li class="nav-item"><a class="nav-link" href="#contact">Kontak</a></li>
                         <li class="nav-item"><a class="nav-link" href="<?= htmlspecialchars($hallog); ?>">Login</a></li>
                     </ul>

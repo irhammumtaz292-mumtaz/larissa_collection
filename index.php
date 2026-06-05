@@ -143,8 +143,8 @@
         </div>
     </section>
 
-    <!-- PORTFOLIO / KATALOG -->
-    <section class="page-section bg-light" id="portfolio">
+    <!-- KATALOG -->
+    <section class="page-section bg-light" id="katalog">
 
         <div class="container">
 
