@@ -3,6 +3,11 @@
   // Mulai session untuk mengakses data user yang login
   session_start();
 
+  if (!isset($_SESSION['id_akun'])) {
+    header('Location: ../../login.php');
+    exit;
+  }
+
   // Metadata halaman
   $title = 'Kuitansi Pesanan';
   $halmut = './';
@@ -12,8 +17,25 @@
   $id_pesanan = intval($_GET['id_pesanan'] ?? 0);
 
   if (empty($id_pesanan)) {
-    echo '<div class="alert alert-danger" role="alert">ID Pesanan tidak ditemukan!</div>';
     header('Location: index.php');
+    exit;
+  }
+
+  require_once '../../config/db/db.php';
+  require_once '../../config/controller/controller.php';
+
+  $id_akun = intval($_SESSION['id_akun']);
+  $pesanan_milik_user = select("
+    SELECT p.id_pesanan
+    FROM pesanan p
+    JOIN akun a ON p.id_customer = a.id_customer
+    WHERE p.id_pesanan = $id_pesanan
+      AND a.id_akun = $id_akun
+    LIMIT 1
+  ");
+
+  if (empty($pesanan_milik_user)) {
+    header('Location: riwayat_pesanan.php');
     exit;
   }
 
@@ -28,9 +50,10 @@
       
       if ($bukti_file) {
         $bukti_file_escaped = mysqli_real_escape_string($db, $bukti_file);
-        $query_update = "UPDATE transaksi SET bukti_pembayaran = '$bukti_file_escaped' WHERE id_transaksi = $id_transaksi";
+        $query_update = "UPDATE transaksi SET bukti_pembayaran = '$bukti_file_escaped'
+          WHERE id_transaksi = $id_transaksi AND id_pesanan = $id_pesanan";
         
-        if (mysqli_query($db, $query_update)) {
+        if (mysqli_query($db, $query_update) && mysqli_affected_rows($db) > 0) {
           $popup = true;
           $statusPopup = 'success';
           $pesan = 'Bukti pembayaran berhasil diperbarui!';
@@ -397,9 +420,13 @@
                   // Hitung total dengan memperhitungkan harga desain
                   $harga_bahan_total = intval($pesanan['harga_bahan']) * intval($pesanan['jumlah_beli']);
                   $harga_desain_total = (intval($pesanan['harga_desain'] ?? 0)) * intval($pesanan['jumlah_beli']);
-                  $total_harga_keseluruhan = $harga_bahan_total + $harga_desain_total;
+                  $total_harga_keseluruhan = hitung_total_harga_pesanan(
+                    $pesanan['harga_bahan'],
+                    $pesanan['harga_desain'] ?? 0,
+                    $pesanan['jumlah_beli']
+                  );
                   $bayar = $transaksi ? intval($transaksi['jumlah_bayar']) : 0;
-                  $sisa_pembayaran = $total_harga_keseluruhan - $bayar;
+                  $sisa_pembayaran = max(0, $total_harga_keseluruhan - $bayar);
                 ?>
 
                 <div class="table-responsive">

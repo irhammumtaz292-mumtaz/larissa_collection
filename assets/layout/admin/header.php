@@ -4,6 +4,11 @@
     require_once '../../config/db/db.php';
     require_once '../../config/controller/controller.php';
 
+    if (!isset($_SESSION['login']) || ($_SESSION['role'] ?? null) !== 'Admin') {
+        header('Location: ../../login.php');
+        exit;
+    }
+
 ?>
 
 <!DOCTYPE html>

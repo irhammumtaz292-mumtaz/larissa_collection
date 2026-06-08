@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jun 02, 2026 at 02:33 AM
+-- Generation Time: Jun 08, 2026 at 04:37 AM
 -- Server version: 11.4.10-MariaDB-log
 -- PHP Version: 8.5.5
 
@@ -70,7 +70,8 @@ CREATE TABLE `bahan` (
 INSERT INTO `bahan` (`id_bahan`, `jenis_bahan`, `id_warna`, `stok`, `harga_bahan`) VALUES
 (1, 'Polyester', 2, 6, 40000),
 (2, 'Wolls', 1, 3, 70000),
-(4, 'Katun', 1, 5, 80000);
+(4, 'Katun', 1, 5, 80000),
+(8, 'Katun', 3, 5, 80000);
 
 -- --------------------------------------------------------
 
@@ -94,7 +95,8 @@ INSERT INTO `customer` (`id_customer`, `nama`, `no_hp`, `alamat`) VALUES
 (17, 'Mandala', '0812345678', 'Subang'),
 (19, 'Revan nurhadi', '083166536486', 'Kasomalang\r\n'),
 (20, 'nabill', '082102939281', 'subang'),
-(21, 'asdasdsad', '213213213', 'Alsakjdlkajdas');
+(21, 'asdasdsad', '213213213', 'Alsakjdlkajdas'),
+(22, '', '', '');
 
 -- --------------------------------------------------------
 
@@ -130,22 +132,19 @@ CREATE TABLE `desain_custom` (
   `id_desain_custom` int(11) NOT NULL,
   `id_customer` int(11) NOT NULL,
   `files` longtext DEFAULT NULL,
-  `catatan` longtext DEFAULT NULL,
+  `catatan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'JSON: notes/descriptions' CHECK (json_valid(`catatan`)),
   `status_desain` enum('Menunggu','Diproses','Selesai','Ditolak') DEFAULT 'Menunggu',
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `detail_pesanan`
+-- Dumping data for table `desain_custom`
 --
 
-CREATE TABLE `detail_pesanan` (
-  `id_detail` int(11) NOT NULL,
-  `id_pesanan` int(11) NOT NULL,
-  `qty` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+INSERT INTO `desain_custom` (`id_desain_custom`, `id_customer`, `files`, `catatan`, `status_desain`, `created_at`) VALUES
+(1, 17, '{\"depan\":\"6a1ff2e63a07a.png\",\"belakang\":\"6a1ff2e63ba4e.png\",\"kanan\":\"6a1ff2e63c544.png\",\"kiri\":\"6a1ff2e63e880.png\",\"logo\":[\"6a1ff2e63fee0.png\"]}', NULL, 'Menunggu', '2026-06-03 09:24:54'),
+(2, 20, '{\"depan\":\"6a223cc8ceb27.jpeg\",\"belakang\":\"6a223cc8d1f97.png\",\"kanan\":\"6a223cc8d2829.png\",\"kiri\":\"6a223cc8d3d61.png\",\"logo\":[\"6a223cc8e9049.png\"]}', NULL, 'Menunggu', '2026-06-05 03:04:40'),
+(3, 20, '{\"depan\":\"6a2643012da5f.png\",\"belakang\":\"6a2643012e9c4.jpeg\",\"kanan\":\"6a2643012f548.png\",\"kiri\":\"6a26430130ff9.png\",\"logo\":[\"6a2643013d571.png\"]}', NULL, 'Menunggu', '2026-06-08 04:20:17');
 
 -- --------------------------------------------------------
 
@@ -165,6 +164,16 @@ CREATE TABLE `pesanan` (
   `harga` int(11) NOT NULL,
   `harga_dp` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pesanan`
+--
+
+INSERT INTO `pesanan` (`id_pesanan`, `id_customer`, `id_produk`, `id_bahan`, `id_desain`, `id_desain_custom`, `jumlah_beli`, `ukuran`, `harga`, `harga_dp`) VALUES
+(19, 17, 2, 4, 2, NULL, 1, '{\"S\":0,\"M\":0,\"L\":0,\"XL\":1,\"XXL\":0,\"XXXL\":0}', 150000, 150000),
+(20, 20, 1, 8, 1, NULL, 1, '{\"S\":0,\"M\":0,\"L\":0,\"XL\":0,\"XXL\":1,\"XXXL\":0}', 92000, 92000),
+(21, 20, 1, 1, NULL, 2, 20, '{\"S\":0,\"M\":20,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 800000, 450000),
+(22, 17, 2, 8, 2, NULL, 20, '{\"S\":0,\"M\":20,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 3000000, 1499993);
 
 -- --------------------------------------------------------
 
@@ -189,7 +198,7 @@ INSERT INTO `produk` (`id_produk`, `nama_produk`, `deskripsi`, `gambar_produk`) 
 (3, 'Rok', 'Mantap', '6a150bae7bb3c.png'),
 (4, 'Sarung', 'Cihuy', '6a150bd2694b0.png'),
 (5, 'Sepatu', 'katanya sih sepatu', '6a18ff1bef8dd.png'),
-(6, 'Apa', 'lkj', '6a1d7f5e54c33.png'),
+(6, 'rok', 'pakaian wanita', '6a1d7f5e54c33.png'),
 (7, 'ldsad', 'sldjsad', '6a1d7f710fa87.png');
 
 -- --------------------------------------------------------
@@ -207,6 +216,16 @@ CREATE TABLE `transaksi` (
   `bukti_pembayaran` varchar(255) NOT NULL,
   `tanggal_pembayaran` date NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `transaksi`
+--
+
+INSERT INTO `transaksi` (`id_transaksi`, `id_pesanan`, `metode_pembayaran`, `status_pembayaran`, `jumlah_bayar`, `bukti_pembayaran`, `tanggal_pembayaran`) VALUES
+(18, 19, 'qris', 'Pending', 0, '6a2238dfddfd8.png', '2026-06-05'),
+(19, 20, 'virtual_account', 'Pending', 0, '6a2239255beb8.png', '2026-06-05'),
+(22, 21, 'qris', 'DP', 450000, '6a223d2d32663.png', '2026-06-05'),
+(23, 22, 'cash', 'DP', 1499993, '6a2284eca94f1.png', '2026-06-05');
 
 -- --------------------------------------------------------
 
@@ -245,7 +264,8 @@ ALTER TABLE `akun`
 --
 ALTER TABLE `bahan`
   ADD PRIMARY KEY (`id_bahan`),
-  ADD KEY `id_warna` (`id_warna`);
+  ADD KEY `id_warna` (`id_warna`),
+  ADD KEY `idx_warna` (`id_warna`);
 
 --
 -- Indexes for table `customer`
@@ -258,21 +278,15 @@ ALTER TABLE `customer`
 --
 ALTER TABLE `desain`
   ADD PRIMARY KEY (`id_desain`),
-  ADD KEY `id_produk` (`id_produk`);
+  ADD KEY `id_produk` (`id_produk`),
+  ADD KEY `idx_produk` (`id_produk`);
 
 --
 -- Indexes for table `desain_custom`
 --
 ALTER TABLE `desain_custom`
   ADD PRIMARY KEY (`id_desain_custom`),
-  ADD KEY `id_customer` (`id_customer`);
-
---
--- Indexes for table `detail_pesanan`
---
-ALTER TABLE `detail_pesanan`
-  ADD PRIMARY KEY (`id_detail`),
-  ADD KEY `fk_detail_pesanan` (`id_pesanan`);
+  ADD KEY `idx_customer` (`id_customer`);
 
 --
 -- Indexes for table `pesanan`
@@ -296,7 +310,8 @@ ALTER TABLE `produk`
 --
 ALTER TABLE `transaksi`
   ADD PRIMARY KEY (`id_transaksi`),
-  ADD KEY `id_pesanan` (`id_pesanan`);
+  ADD KEY `id_pesanan` (`id_pesanan`),
+  ADD KEY `idx_pesanan` (`id_pesanan`);
 
 --
 -- Indexes for table `warna`
@@ -318,13 +333,13 @@ ALTER TABLE `akun`
 -- AUTO_INCREMENT for table `bahan`
 --
 ALTER TABLE `bahan`
-  MODIFY `id_bahan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id_bahan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `customer`
 --
 ALTER TABLE `customer`
-  MODIFY `id_customer` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id_customer` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `desain`
@@ -336,19 +351,13 @@ ALTER TABLE `desain`
 -- AUTO_INCREMENT for table `desain_custom`
 --
 ALTER TABLE `desain_custom`
-  MODIFY `id_desain_custom` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `detail_pesanan`
---
-ALTER TABLE `detail_pesanan`
-  MODIFY `id_detail` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_desain_custom` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `pesanan`
 --
 ALTER TABLE `pesanan`
-  MODIFY `id_pesanan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_pesanan` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `produk`
@@ -360,7 +369,7 @@ ALTER TABLE `produk`
 -- AUTO_INCREMENT for table `transaksi`
 --
 ALTER TABLE `transaksi`
-  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_transaksi` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `warna`
@@ -394,13 +403,7 @@ ALTER TABLE `desain`
 -- Constraints for table `desain_custom`
 --
 ALTER TABLE `desain_custom`
-  ADD CONSTRAINT `desain_custom_ibfk_1` FOREIGN KEY (`id_customer`) REFERENCES `customer` (`id_customer`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `detail_pesanan`
---
-ALTER TABLE `detail_pesanan`
-  ADD CONSTRAINT `fk_detail_pesanan` FOREIGN KEY (`id_pesanan`) REFERENCES `pesanan` (`id_pesanan`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `desain_custom_ibfk_1` FOREIGN KEY (`id_customer`) REFERENCES `customer` (`id_customer`);
 
 --
 -- Constraints for table `pesanan`

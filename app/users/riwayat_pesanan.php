@@ -39,7 +39,9 @@
       p.id_bahan,
       pr.nama_produk,
       b.jenis_bahan,
+      b.harga_bahan,
       w.nama_warna,
+      d.harga_desain,
       t.id_transaksi,
       t.status_pembayaran,
       t.tanggal_pembayaran
@@ -47,6 +49,7 @@
     JOIN produk pr ON p.id_produk = pr.id_produk
     JOIN bahan b ON p.id_bahan = b.id_bahan
     JOIN warna w ON b.id_warna = w.id_warna
+    LEFT JOIN desain d ON p.id_desain = d.id_desain
     LEFT JOIN transaksi t ON p.id_pesanan = t.id_pesanan
     WHERE p.id_customer = $id_customer
     ORDER BY p.id_pesanan DESC
@@ -110,7 +113,11 @@
                       <span class="badge bg-info text-white"><?= htmlspecialchars($pesanan['nama_warna']) ?></span>
                     </td>
                     <td><?= $pesanan['jumlah_beli'] ?> pcs</td>
-                    <td>Rp <?= number_format($pesanan['harga']) ?></td>
+                    <td>Rp <?= number_format(hitung_total_harga_pesanan(
+                      $pesanan['harga_bahan'],
+                      $pesanan['harga_desain'] ?? 0,
+                      $pesanan['jumlah_beli']
+                    )) ?></td>
                     <td>
                       <?php
                         $status = $pesanan['status_pembayaran'] ?? 'Menunggu';

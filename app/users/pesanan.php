@@ -60,14 +60,21 @@
   // Memanggil helper tambah_desain_custom() yang menangani upload file dan menyimpan record desain custom
   if (isset($_POST['tambah'])) {
     $id_desain_custom = tambah_desain_custom($_POST, $_FILES);
-    // Simpan id desain hasil upload di session agar dapat dipakai saat submit pesanan
-    $_SESSION['id_desain_custom_uploaded'] = $id_desain_custom;
-    $_SESSION['design_type'] = 'upload';
-    // Tampilkan notifikasi sukses singkat
-    echo '<div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
-            <i class="bi bi-check-circle me-2"></i>Design berhasil disimpan!
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>';
+    if ($id_desain_custom) {
+      // Simpan id desain hasil upload di session agar dapat dipakai saat submit pesanan
+      $_SESSION['id_desain_custom_uploaded'] = $id_desain_custom;
+      $_SESSION['design_type'] = 'upload';
+      echo '<div class="alert alert-success alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
+              <i class="bi bi-check-circle me-2"></i>Design berhasil disimpan!
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>';
+    } else {
+      unset($_SESSION['id_desain_custom_uploaded'], $_SESSION['design_type']);
+      echo '<div class="alert alert-danger alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
+              <i class="bi bi-exclamation-circle me-2"></i>Design gagal disimpan. Pastikan logo berupa JPG, JPEG, JFIF, atau PNG dengan ukuran maksimal 2 MB.
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>';
+    }
   }
 
   // 2) Pilih Design dari Database
@@ -180,41 +187,6 @@
                   </div>
                 </div>
 
-                <!-- DETAIL PESANAN -->
-                <div class="mb-4">
-                  <h6 class="fw-semibold mb-3">
-                    <i class="bi bi-bag-check me-2"></i>Detail Pesanan
-                  </h6>
-
-                  <div class="row g-3">
-
-                    <div class="col-md-6">
-                      <label class="form-label fw-medium">Bahan & Warna</label>
-                      <select name="id_bahan" class="form-select rounded-3" required>
-                        <option value="" selected disabled>Pilih Bahan</option>
-                        <?php 
-                          $prev_jenis = '';
-                          $close_group = false;
-                          foreach($data_bahan as $bhn):
-                            // Jika jenis bahan berbeda, tutup optgroup sebelumnya dan buka yang baru
-                            if ($prev_jenis !== $bhn['jenis_bahan']) {
-                              if ($close_group) echo '</optgroup>';
-                              echo '<optgroup label="' . htmlspecialchars($bhn['jenis_bahan']) . '">';
-                              $close_group = true;
-                              $prev_jenis = $bhn['jenis_bahan'];
-                            }
-                        ?>
-                          <option value="<?= $bhn['id_bahan'] ?>">
-                            <?= htmlspecialchars($bhn['nama_warna']) ?> - Rp <?= number_format($bhn['harga_bahan']) ?>
-                          </option>
-                        <?php endforeach; if ($close_group) echo '</optgroup>'; ?>
-                      </select>
-                      <small class="text-muted d-block mt-2">Memilih bahan akan menampilkan pilihan warna tersedia</small>
-                    </div>
-
-                  </div>
-                </div>
-
                 <!-- DESIGN -->
                 <div class="mb-4">
                   <h6 class="fw-semibold mb-3">
@@ -245,6 +217,41 @@
                         <i class="bi bi-images fs-5 d-block mb-2"></i>
                         Pilih Design
                       </button>
+                    </div>
+
+                  </div>
+                </div>
+
+                <!-- DETAIL PESANAN -->
+                <div class="mb-4">
+                  <h6 class="fw-semibold mb-3">
+                    <i class="bi bi-bag-check me-2"></i>Detail Pesanan
+                  </h6>
+
+                  <div class="row g-3">
+
+                    <div class="col-md-6">
+                      <label class="form-label fw-medium">Bahan & Warna</label>
+                      <select name="id_bahan" class="form-select rounded-3" required>
+                        <option value="" selected disabled>Pilih Bahan</option>
+                        <?php
+                          $prev_jenis = '';
+                          $close_group = false;
+                          foreach($data_bahan as $bhn):
+                            // Jika jenis bahan berbeda, tutup optgroup sebelumnya dan buka yang baru
+                            if ($prev_jenis !== $bhn['jenis_bahan']) {
+                              if ($close_group) echo '</optgroup>';
+                              echo '<optgroup label="' . htmlspecialchars($bhn['jenis_bahan']) . '">';
+                              $close_group = true;
+                              $prev_jenis = $bhn['jenis_bahan'];
+                            }
+                        ?>
+                          <option value="<?= $bhn['id_bahan'] ?>">
+                            <?= htmlspecialchars($bhn['nama_warna']) ?> - Rp <?= number_format($bhn['harga_bahan']) ?>
+                          </option>
+                        <?php endforeach; if ($close_group) echo '</optgroup>'; ?>
+                      </select>
+                      <small class="text-muted d-block mt-2">Memilih bahan akan menampilkan pilihan warna tersedia</small>
                     </div>
 
                   </div>

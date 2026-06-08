@@ -23,6 +23,15 @@
         return $rows;
     }
 
+    function hitung_total_harga_pesanan($harga_bahan, $harga_desain, $jumlah_beli)
+    {
+        $harga_bahan = max(0, intval($harga_bahan));
+        $harga_desain = max(0, intval($harga_desain));
+        $jumlah_beli = max(0, intval($jumlah_beli));
+
+        return ($harga_bahan + $harga_desain) * $jumlah_beli;
+    }
+
     // fungsi mengupload foto
     function upload_foto($fieldName = 'foto', $targetDir = 'produk')
     {
@@ -70,6 +79,70 @@
 
         move_uploaded_file($tmpName, $uploadPath . $namaFileBaru);
         return $namaFileBaru;
+    }
+
+    function upload_logo_custom($files, $targetDir = 'desain')
+    {
+        if (!isset($files['name']) || !is_array($files['name'])) {
+            return [];
+        }
+
+        $extensiValid = ['jpg', 'jpeg', 'png', 'jfif'];
+        $mimeValid = ['image/jpeg', 'image/png'];
+        $ukuranMaksimal = 2048000;
+        $uploadPath = __DIR__ . '/../../assets/img/' . $targetDir . '/';
+        $uploadedFiles = [];
+
+        if (!is_dir($uploadPath) && !mkdir($uploadPath, 0755, true)) {
+            return false;
+        }
+
+        $cleanup = static function () use (&$uploadedFiles, $uploadPath) {
+            foreach ($uploadedFiles as $file) {
+                $filePath = $uploadPath . $file;
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+        };
+
+        $count = count($files['name']);
+        for ($i = 0; $i < $count; $i++) {
+            $error = $files['error'][$i] ?? UPLOAD_ERR_NO_FILE;
+            if ($error === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+
+            $namaFile = $files['name'][$i] ?? '';
+            $tmpName = $files['tmp_name'][$i] ?? '';
+            $ukuranFile = intval($files['size'][$i] ?? 0);
+            $extensi = strtolower(pathinfo($namaFile, PATHINFO_EXTENSION));
+            $mime = is_uploaded_file($tmpName) && function_exists('mime_content_type')
+                ? mime_content_type($tmpName)
+                : false;
+
+            if (
+                $error !== UPLOAD_ERR_OK ||
+                $ukuranFile > $ukuranMaksimal ||
+                !in_array($extensi, $extensiValid, true) ||
+                !in_array($mime, $mimeValid, true)
+            ) {
+                $cleanup();
+                return false;
+            }
+
+            $extensiSimpan = $extensi === 'jfif' ? 'jpg' : $extensi;
+            $namaFileBaru = uniqid() . '.' . $extensiSimpan;
+
+            if (!move_uploaded_file($tmpName, $uploadPath . $namaFileBaru)) {
+                $cleanup();
+                return false;
+            }
+
+            $uploadedFiles[] = $namaFileBaru;
+        }
+
+        return $uploadedFiles;
     }
 
     // Admin
@@ -296,6 +369,7 @@
         
         // .Bahan Section
 
+        // Bahan Section
             // Tambah Warna
             function tambah_warna($post)
             {
@@ -671,22 +745,15 @@
                 if ($gambar_kiri) $uploadedFiles['kiri'] = $gambar_kiri;
 
                 // Upload multiple logos
-                $logoFiles = [];
-                if (isset($_FILES['logo'])) {
-                    $logos = $_FILES['logo'];
-                    $count = is_array($logos['name']) ? count($logos['name']) : 0;
-                    for ($i = 0; $i < $count; $i++) {
-                        if ($logos['error'][$i] === UPLOAD_ERR_OK) {
-                            $tmpName = $logos['tmp_name'][$i];
-                            $orig = $logos['name'][$i];
-                            $ext = pathinfo($orig, PATHINFO_EXTENSION);
-                            $newName = uniqid() . "." . $ext;
-                            $uploadPath = __DIR__ . '/../../assets/img/desain/';
-                            if (!is_dir($uploadPath)) mkdir($uploadPath, 0755, true);
-                            move_uploaded_file($tmpName, $uploadPath . $newName);
-                            $logoFiles[] = $newName;
+                $logoFiles = upload_logo_custom($_FILES['logo'] ?? [], 'desain');
+                if ($logoFiles === false) {
+                    foreach ($uploadedFiles as $uploadedFile) {
+                        $filePath = __DIR__ . '/../../assets/img/desain/' . $uploadedFile;
+                        if (file_exists($filePath)) {
+                            @unlink($filePath);
                         }
                     }
+                    return false;
                 }
                 
                 if (!empty($logoFiles)) {
@@ -768,16 +835,24 @@
                 $jumlah_beli = array_sum($sizes);
                 $ukuran_json = mysqli_real_escape_string($db, json_encode($sizes));
 
-                // Harga dasar dari bahan
-                $harga = 0;
+                // Harga bahan dan desain dihitung per item
+                $harga_bahan = 0;
+                $harga_desain = 0;
                 if ($id_bahan) {
                     $q = mysqli_query($db, "SELECT harga_bahan FROM bahan WHERE id_bahan = $id_bahan LIMIT 1");
                     if ($r = mysqli_fetch_assoc($q)) {
                         $harga_bahan = intval($r['harga_bahan']);
-                        $harga = $harga_bahan * $jumlah_beli;
                     }
                 }
 
+                if ($id_desain) {
+                    $q = mysqli_query($db, "SELECT harga_desain FROM desain WHERE id_desain = $id_desain LIMIT 1");
+                    if ($r = mysqli_fetch_assoc($q)) {
+                        $harga_desain = intval($r['harga_desain']);
+                    }
+                }
+
+                $harga = hitung_total_harga_pesanan($harga_bahan, $harga_desain, $jumlah_beli);
                 $harga_dp = intval($post['harga_dp'] ?? 0);
 
                 // Insert pesanan - id_desain_custom bisa null jika pilih design existing
@@ -802,9 +877,27 @@
                 global $db;
 
                 $metode = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['metode_pembayaran'] ?? '')));
+                $jenis_pembayaran = htmlspecialchars(strip_tags($post['jenis_pembayaran'] ?? ''));
+                $total_harga = max(0, intval($total_harga));
+                $jumlah_bayar = max(0, intval($post['jumlah_bayar'] ?? 0));
+                $metodeValid = ['qris', 'virtual_account', 'transfer', 'cash'];
 
-                if (empty($metode) || $id_pesanan <= 0) {
+                if (
+                    !in_array($metode, $metodeValid, true) ||
+                    !in_array($jenis_pembayaran, ['dp', 'lunas'], true) ||
+                    $id_pesanan <= 0 ||
+                    $total_harga <= 0
+                ) {
                     return false;
+                }
+
+                if ($jenis_pembayaran === 'lunas') {
+                    $jumlah_bayar = $total_harga;
+                    $status_pembayaran = 'Lunas';
+                } elseif ($jumlah_bayar <= 0 || $jumlah_bayar >= $total_harga) {
+                    return false;
+                } else {
+                    $status_pembayaran = 'DP';
                 }
 
                 // Jika file bukti telah di-upload dan diberikan, simpan nama file tersebut.
@@ -825,10 +918,8 @@
 
                 $tanggal = date('Y-m-d');
 
-                // PERUBAHAN: jumlah_bayar dimulai dari 0 (belum ada pembayaran dari customer)
-                // Admin nanti yang akan update jumlah_bayar dan status saat mengkonfirmasi pembayaran
                 $queryTransaksi = "INSERT INTO transaksi (id_pesanan, metode_pembayaran, status_pembayaran, jumlah_bayar, bukti_pembayaran, tanggal_pembayaran)
-                    VALUES($id_pesanan, '$metode', 'Pending', 0, '$bukti_pembayaran', '$tanggal')";
+                    VALUES($id_pesanan, '$metode', '$status_pembayaran', $jumlah_bayar, '$bukti_pembayaran', '$tanggal')";
 
                 mysqli_query($db, $queryTransaksi);
                 return mysqli_insert_id($db);

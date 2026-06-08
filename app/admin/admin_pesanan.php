@@ -209,7 +209,16 @@
                                                     </td>
                                                     <td><?= htmlspecialchars($pesanan['nama_produk']) ?></td>
                                                     <td class="text-center"><?= intval($pesanan['jumlah_beli']) ?> pcs</td>
-                                                    <td class="fw-bold">Rp <?= number_format(intval($pesanan['harga'])) ?></td>
+                                                    <td class="fw-bold">
+                                                        <?php
+                                                          $total_harga_table = hitung_total_harga_pesanan(
+                                                              $pesanan['harga_bahan'],
+                                                              $pesanan['harga_desain'] ?? 0,
+                                                              $pesanan['jumlah_beli']
+                                                          );
+                                                        ?>
+                                                        Rp <?= number_format($total_harga_table) ?>
+                                                    </td>
                                                     <td class="text-center">
                                                         <span class="badge 
                                                             <?php 
@@ -246,10 +255,11 @@
                                                         </button>
                                                         <?php if (!empty($pesanan['id_transaksi'])): ?>
                                                             <?php
-                                                              // Hitung total dengan design cost
-                                                              $harga_bahan_total = intval($pesanan['harga_bahan']) * intval($pesanan['jumlah_beli']);
-                                                              $harga_desain_total = (intval($pesanan['harga_desain'] ?? 0)) * intval($pesanan['jumlah_beli']);
-                                                              $total_harga = $harga_bahan_total + $harga_desain_total;
+                                                              $total_harga = hitung_total_harga_pesanan(
+                                                                  $pesanan['harga_bahan'],
+                                                                  $pesanan['harga_desain'] ?? 0,
+                                                                  $pesanan['jumlah_beli']
+                                                              );
                                                             ?>
                                                             <button class="btn btn-sm btn-outline-success mb-1" 
                                                                     data-bs-toggle="modal" 
@@ -334,7 +344,16 @@
                                         </div>
                                         <div class="col-6">
                                             <span class="text-muted fw-medium">Total</span>
-                                            <div class="fw-bold">Rp <?= number_format(intval($pesanan['harga']), 0, '.', '.') ?></div>
+                                            <div class="fw-bold">
+                                                <?php
+                                                  $total_harga_mobile = hitung_total_harga_pesanan(
+                                                      $pesanan['harga_bahan'],
+                                                      $pesanan['harga_desain'] ?? 0,
+                                                      $pesanan['jumlah_beli']
+                                                  );
+                                                ?>
+                                                Rp <?= number_format($total_harga_mobile, 0, '.', '.') ?>
+                                            </div>
                                         </div>
                                         <div class="col-12">
                                             <span class="text-muted fw-medium">HP</span>
@@ -362,10 +381,11 @@
                                         <?php endif; ?>
                                         <?php if (!empty($pesanan['id_transaksi'])): ?>
                                             <?php
-                                              // Hitung total dengan design cost
-                                              $harga_bahan_total = intval($pesanan['harga_bahan']) * intval($pesanan['jumlah_beli']);
-                                              $harga_desain_total = (intval($pesanan['harga_desain'] ?? 0)) * intval($pesanan['jumlah_beli']);
-                                              $total_harga = $harga_bahan_total + $harga_desain_total;
+                                              $total_harga = hitung_total_harga_pesanan(
+                                                  $pesanan['harga_bahan'],
+                                                  $pesanan['harga_desain'] ?? 0,
+                                                  $pesanan['jumlah_beli']
+                                              );
                                             ?>
                                             <button class="btn btn-sm btn-outline-success rounded-pill" 
                                                     data-bs-toggle="modal" 
