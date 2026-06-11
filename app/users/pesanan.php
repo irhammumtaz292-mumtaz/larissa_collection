@@ -90,7 +90,7 @@
   }
 
   // 3) Submit Pesanan
-  // Proses utama: validasi desain, siapkan data, simpan pesanan dan transaksi
+  // Simpan draft terlebih dahulu agar customer bisa mengecek detail di halaman konfirmasi.
   if (isset($_POST['submit_pesanan'])) {
     // Pastikan user sudah memilih atau mengupload design sebelumnya
     if (!isset($_SESSION['design_type'])) {
@@ -115,12 +115,10 @@
         $post_data['id_desain_custom'] = $_SESSION['id_desain_custom_uploaded'];
       }
 
-      // SIMPAN DATA PESANAN KE SESSION SEBAGAI DRAFT (BELUM INSERT KE DB)
       $_SESSION['draft_pesanan'] = $post_data;
       $_SESSION['draft_design_type'] = $_SESSION['design_type'];
 
-      // REDIRECT KE HALAMAN KONFIRMASI
-      header('Location: konfirmasi_pesanan.php');
+      echo "<script>window.location.href='konfirmasi_pesanan.php';</script>";
       exit;
     }
   }
@@ -247,7 +245,7 @@
                             }
                         ?>
                           <option value="<?= $bhn['id_bahan'] ?>">
-                            <?= htmlspecialchars($bhn['nama_warna']) ?> - Rp <?= number_format($bhn['harga_bahan']) ?>
+                            <?= htmlspecialchars($bhn['nama_warna']) ?>
                           </option>
                         <?php endforeach; if ($close_group) echo '</optgroup>'; ?>
                       </select>
@@ -328,7 +326,7 @@
                 <!-- BUTTON -->
                 <button type="submit" name="submit_pesanan" class="btn btn-warning w-100 py-3 rounded-pill fw-semibold text-dark">
                   <i class="bi bi-cart-check me-2"></i>
-                  Pembayaran & Konfirmasi
+                  Konfirmasi Pesanan
                 </button>
 
               </form>
@@ -534,7 +532,6 @@
                                     <div class="card-body">
                                         <h6 class="card-title"><?= htmlspecialchars($des['nama_desain']) ?></h6>
                                         <p class="text-muted small mb-2"><?= htmlspecialchars(substr($des['deskripsi'], 0, 50)) ?></p>
-                                        <p class="fw-bold text-success">Rp <?= number_format($des['harga_desain']) ?></p>
                                         <div class="form-check">
                                             <input class="form-check-input design-radio" type="radio" name="pilih_design" value="<?= $des['id_desain'] ?>" id="design<?= $des['id_desain'] ?>">
                                             <label class="form-check-label" for="design<?= $des['id_desain'] ?>">

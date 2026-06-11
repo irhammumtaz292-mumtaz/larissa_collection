@@ -61,7 +61,7 @@
             $kata_cari = htmlspecialchars(strip_tags($_POST['kata_cari']));
             $data_bahan = select("SELECT bahan.*, warna.* FROM bahan
             JOIN warna ON bahan.id_warna = warna.id_warna
-            WHERE CONCAT(jenis_bahan, nama_warna, stok, harga_bahan) LIKE '%$kata_cari%' ORDER BY jenis_bahan ASC, nama_warna ASC");
+            WHERE CONCAT(jenis_bahan, nama_warna) LIKE '%$kata_cari%' ORDER BY jenis_bahan ASC, nama_warna ASC");
         } else 
         {
             $data_bahan = select("SELECT bahan.*, warna.* FROM bahan
@@ -156,8 +156,6 @@
                                         <th class="bg-success">#</th>
                                         <th class="bg-success">Jenis Bahan</th>
                                         <th class="bg-success">Warna</th>
-                                        <th class="bg-success">Stok</th>
-                                        <th class="bg-success">Harga Bahan</th>
                                         <th class="bg-success">Action</th>
                                     </tr>
                                 </thead>
@@ -169,8 +167,6 @@
                                         <td class="text-center"><?= $no++; ?></td>
                                         <td><?= $bahan['jenis_bahan'] ?></td>
                                         <td><?= $bahan['nama_warna'] ?></td>
-                                        <td><?= $bahan['stok'] ?></td>
-                                        <td><?= $bahan['harga_bahan'] ?></td>
                                         <td class="text-center">
                                         
                                             <button type="button" class="btn btn-sm btn-outline-primary mb-1" data-bs-toggle="modal" data-bs-target="#modalUbahBahan<?= $bahan['id_bahan'] ?>">
@@ -258,21 +254,13 @@
                                     <h6 class="mb-0 fw-semibold text-truncate"><?= $bahan['jenis_bahan'] ?></h6>
                                     <small class="text-muted text-truncate d-block"><?= $bahan['nama_warna'] ?></small>
                                 </div>
-                                <span class="badge rounded-pill px-3 py-2 bg-success">
-                                    Stok <?= $bahan['stok'] ?>
-                                </span>
                             </div>
 
                             <!-- Body -->
                             <div class="card-body py-2 bg-light">
                                 <div class="row g-2 small">
 
-                                    <div class="col-6">
-                                        <span class="text-muted fw-medium">Harga</span>
-                                        <div><?= $bahan['harga_bahan'] ?></div>
-                                    </div>
-
-                                    <div class="col-6">
+                                    <div class="col-12">
                                         <span class="text-muted fw-medium">Warna</span>
                                         <div><?= $bahan['nama_warna'] ?></div>
                                     </div>
@@ -327,16 +315,6 @@
                                     <label for="floatingInput">Jenis Bahan</label>
                                 </div>
 
-                                <div class="form-floating mb-2">
-                                    <input type="number" name="stok" id="floatingInput" class="form-control" minlength="1" placeholder="Stok" required>
-                                    <label for="floatingInput">Stok</label>
-                                </div>
-                                
-                                <div class="form-floating mb-2">
-                                    <input type="number" name="harga_bahan" id="floatingInput" class="form-control" minlength="4" placeholder="Harga Bahan" required>
-                                    <label for="floatingInput">Harga Bahan</label>
-                                </div>
-
                                 <div class="form-group mb-2">
                                     <label for="nama_warna">Warna</label>
                                     <select name="id_warna" id="nama_warna" class="form-control" minlength="5" required>
@@ -384,16 +362,6 @@
                                     <div class="form-floating mb-3">
                                         <input type="text" name="jenis_bahan" id="floatingInput" class="form-control" minlength="5" placeholder="Jenis Bahan" value="<?= $bahan['jenis_bahan'] ?>" required>
                                         <label for="floatingInput">Jenis Bahan</label>
-                                    </div>
-
-                                    <div class="form-floating mb-3">
-                                        <input type="number" name="stok" id="floatingInput" class="form-control" minlength="1" placeholder="Stok" value="<?= $bahan['stok'] ?>" required>
-                                        <label for="floatingInput">Stok</label>
-                                    </div>
-
-                                    <div class="form-floating mb-3">
-                                        <input type="number" name="harga_bahan" id="floatingInput" class="form-control" minlength="4" placeholder="Harga Bahan" value="<?= $bahan['harga_bahan'] ?>" required>
-                                        <label for="floatingInput">Harga Bahan</label>
                                     </div>
 
                                     <div class="form-group mb-3">

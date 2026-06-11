@@ -1,0 +1,336 @@
+body.admin-shell {
+  --admin-dark: #212529;
+  --admin-dark-soft: #2b3035;
+  --admin-primary: #ffc800;
+  --admin-primary-dark: #cca000;
+  --admin-surface: #ffffff;
+  --admin-muted: #6c757d;
+  --admin-border: #e9ecef;
+  --admin-shadow: 0 0.5rem 1.5rem rgba(33, 37, 41, 0.08);
+  background: #f8f9fa;
+  color: #212529;
+  font-family: "Roboto Slab", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+body.admin-shell h1,
+body.admin-shell h2,
+body.admin-shell h3,
+body.admin-shell h4,
+body.admin-shell h5,
+body.admin-shell h6,
+body.admin-shell .navbar-brand,
+body.admin-shell .card-title {
+  font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+body.admin-shell .admin-main {
+  min-width: 0;
+  background: #f8f9fa;
+}
+
+body.admin-shell .admin-sidebar {
+  width: 232px;
+  min-width: 232px;
+  background: var(--admin-dark);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.admin-shell .admin-sidebar-brand {
+  color: var(--admin-primary);
+  font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700;
+}
+
+body.admin-shell .admin-sidebar .nav-link,
+body.admin-shell .admin-sidebar .btn.nav-link {
+  color: rgba(255, 255, 255, 0.78) !important;
+  border-radius: 0.5rem !important;
+  margin-bottom: 0.2rem;
+}
+
+body.admin-shell .admin-sidebar .nav-link:hover,
+body.admin-shell .admin-sidebar .btn.nav-link:hover {
+  color: #fff !important;
+  background: rgba(255, 200, 0, 0.14) !important;
+}
+
+body.admin-shell .admin-sidebar .nav-link.active,
+body.admin-shell .admin-sidebar .btn.nav-link.active {
+  color: #212529 !important;
+  background: var(--admin-primary) !important;
+  font-weight: 700;
+}
+
+body.admin-shell .admin-user-button {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+body.admin-shell .admin-user-button:hover {
+  background: rgba(255, 200, 0, 0.16);
+  color: #fff;
+}
+
+body.admin-shell .admin-user-action {
+  border-color: rgba(255, 200, 0, 0.45);
+  color: #fff;
+}
+
+body.admin-shell .admin-user-action:hover {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #212529;
+}
+
+body.admin-shell .admin-topbar {
+  background: var(--admin-dark);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: var(--admin-shadow);
+}
+
+body.admin-shell .admin-topbar .navbar-brand {
+  color: var(--admin-primary);
+}
+
+body.admin-shell .admin-topbar .btn {
+  border-color: rgba(255, 200, 0, 0.65);
+  color: var(--admin-primary);
+}
+
+body.admin-shell .admin-topbar .btn:hover {
+  background: var(--admin-primary);
+  color: #212529;
+}
+
+body.admin-shell .admin-topbar a {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+body.admin-shell main {
+  padding-bottom: 1rem;
+}
+
+body.admin-shell .card {
+  border: 0;
+  border-radius: 0.5rem;
+  box-shadow: var(--admin-shadow);
+  overflow: hidden;
+}
+
+body.admin-shell .card-header {
+  background: #fff;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+body.admin-shell .card-footer,
+body.admin-shell .card-body {
+  background-color: #fff !important;
+}
+
+body.admin-shell .card-title {
+  color: var(--admin-dark);
+  font-size: 1.15rem;
+  margin-bottom: 0;
+}
+
+body.admin-shell .table {
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+body.admin-shell .table-bordered {
+  border-color: var(--admin-border) !important;
+}
+
+body.admin-shell .table thead th,
+body.admin-shell .table thead .bg-success,
+body.admin-shell .table thead .table-dark th {
+  background: var(--admin-dark) !important;
+  color: var(--admin-primary) !important;
+  border-color: var(--admin-dark-soft) !important;
+  font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.84rem;
+}
+
+body.admin-shell .table tbody tr:hover {
+  background: #fff8db;
+}
+
+body.admin-shell .form-control,
+body.admin-shell .form-select {
+  border-color: #dee2e6;
+  border-radius: 0.5rem;
+}
+
+body.admin-shell .form-control:focus,
+body.admin-shell .form-select:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 0.2rem rgba(255, 200, 0, 0.22);
+}
+
+body.admin-shell .btn {
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+body.admin-shell .btn-primary,
+body.admin-shell .btn-success,
+body.admin-shell .btn-warning {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #212529;
+}
+
+body.admin-shell .btn-primary:hover,
+body.admin-shell .btn-success:hover,
+body.admin-shell .btn-warning:hover {
+  background: var(--admin-primary-dark);
+  border-color: var(--admin-primary-dark);
+  color: #212529;
+}
+
+body.admin-shell .btn-secondary {
+  background: var(--admin-dark);
+  border-color: var(--admin-dark);
+  color: #fff;
+}
+
+body.admin-shell .btn-outline-primary,
+body.admin-shell .btn-outline-success,
+body.admin-shell .btn-outline-warning,
+body.admin-shell .btn-outline-info {
+  border-color: var(--admin-primary);
+  color: #7a6000;
+}
+
+body.admin-shell .btn-outline-primary:hover,
+body.admin-shell .btn-outline-success:hover,
+body.admin-shell .btn-outline-warning:hover,
+body.admin-shell .btn-outline-info:hover {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #212529;
+}
+
+body.admin-shell .badge.bg-primary,
+body.admin-shell .badge.bg-success,
+body.admin-shell .badge.bg-info,
+body.admin-shell .badge.bg-warning {
+  background: var(--admin-primary) !important;
+  color: #212529 !important;
+}
+
+body.admin-shell .modal-content {
+  border: 0;
+  border-radius: 0.5rem;
+  box-shadow: var(--admin-shadow);
+  overflow: hidden;
+}
+
+body.admin-shell .modal-header {
+  background: var(--admin-dark) !important;
+  color: var(--admin-primary) !important;
+  border-bottom: 0;
+}
+
+body.admin-shell .modal-header .modal-title,
+body.admin-shell .modal-header h5 {
+  color: var(--admin-primary) !important;
+}
+
+body.admin-shell .modal-header .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+body.admin-shell .modal-footer {
+  background: #f8f9fa;
+  border-top: 1px solid var(--admin-border);
+}
+
+body.admin-shell .text-bg-primary,
+body.admin-shell .text-bg-success,
+body.admin-shell .text-bg-warning,
+body.admin-shell .text-bg-danger {
+  background: #fff !important;
+  color: var(--admin-dark) !important;
+  border-left: 0.35rem solid var(--admin-primary);
+}
+
+body.admin-shell .text-bg-primary .text-white,
+body.admin-shell .text-bg-success .text-white,
+body.admin-shell .text-bg-warning .text-dark,
+body.admin-shell .text-bg-danger .text-white {
+  color: var(--admin-dark) !important;
+}
+
+body.admin-shell .text-bg-primary .card-subtitle,
+body.admin-shell .text-bg-success .card-subtitle,
+body.admin-shell .text-bg-warning .card-subtitle,
+body.admin-shell .text-bg-danger .card-subtitle {
+  color: var(--admin-muted) !important;
+}
+
+body.admin-shell img {
+  object-fit: cover;
+}
+
+body.admin-shell .card img.img-fluid,
+body.admin-shell table img {
+  border-radius: 0.5rem;
+  border: 1px solid var(--admin-border);
+  background: #fff;
+}
+
+body.admin-shell .alert {
+  border: 0;
+  border-radius: 0.5rem;
+  box-shadow: var(--admin-shadow);
+}
+
+@media (max-width: 767.98px) {
+  body.admin-shell .admin-main {
+    padding: 0.75rem !important;
+  }
+
+  body.admin-shell .card-wrap {
+    align-items: stretch !important;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}
+
+@media print {
+  body.admin-shell {
+    background: #fff;
+  }
+
+  body.admin-shell #sidebar,
+  body.admin-shell .admin-topbar,
+  body.admin-shell .no-print,
+  body.admin-shell footer {
+    display: none !important;
+  }
+
+  body.admin-shell .admin-main {
+    padding: 0 !important;
+  }
+
+  body.admin-shell .report-print-area .card {
+    border: 0;
+    box-shadow: none;
+  }
+
+  body.admin-shell .report-print-area .card-header,
+  body.admin-shell .report-print-area .card-body {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  body.admin-shell .table thead th {
+    color: #000 !important;
+    background: #f1f3f5 !important;
+    border-color: #adb5bd !important;
+  }
+}

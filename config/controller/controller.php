@@ -23,13 +23,19 @@
         return $rows;
     }
 
-    function hitung_total_harga_pesanan($harga_bahan, $harga_desain, $jumlah_beli)
+    function format_tanggal_pesanan($tanggal)
     {
-        $harga_bahan = max(0, intval($harga_bahan));
-        $harga_desain = max(0, intval($harga_desain));
-        $jumlah_beli = max(0, intval($jumlah_beli));
+        if (empty($tanggal)) {
+            return '-';
+        }
 
-        return ($harga_bahan + $harga_desain) * $jumlah_beli;
+        $timestamp = strtotime($tanggal);
+
+        if ($timestamp === false) {
+            return '-';
+        }
+
+        return date('d/m/Y H:i', $timestamp);
     }
 
     // fungsi mengupload foto
@@ -97,12 +103,9 @@
             return false;
         }
 
-        $cleanup = static function () use (&$uploadedFiles, $uploadPath) {
+        $cleanup = static function () use (&$uploadedFiles, $targetDir) {
             foreach ($uploadedFiles as $file) {
-                $filePath = $uploadPath . $file;
-                if (file_exists($filePath)) {
-                    @unlink($filePath);
-                }
+                hapus_file_upload($targetDir, $file);
             }
         };
 
@@ -143,6 +146,210 @@
         }
 
         return $uploadedFiles;
+    }
+
+    function hapus_file_upload($targetDir, $filename)
+    {
+        $filename = trim((string) $filename);
+
+        if ($filename === '') {
+            return false;
+        }
+
+        $filename = str_replace('\\', '/', $filename);
+
+        if (basename($filename) !== $filename) {
+            return false;
+        }
+
+        $baseDir = realpath(__DIR__ . '/../../assets/img/' . $targetDir);
+        if ($baseDir === false) {
+            return false;
+        }
+
+        $filePath = $baseDir . DIRECTORY_SEPARATOR . $filename;
+        $realFilePath = realpath($filePath);
+
+        if (
+            $realFilePath === false ||
+            strpos($realFilePath, $baseDir . DIRECTORY_SEPARATOR) !== 0 ||
+            !is_file($realFilePath)
+        ) {
+            return false;
+        }
+
+        return @unlink($realFilePath);
+    }
+
+    function hapus_file_uploads($targetDir, array $filenames)
+    {
+        foreach (array_unique(array_filter($filenames)) as $filename) {
+            hapus_file_upload($targetDir, $filename);
+        }
+    }
+
+    function daftar_file_desain_custom($files)
+    {
+        if (is_string($files)) {
+            $files = json_decode($files, true);
+        }
+
+        if (!is_array($files)) {
+            return [];
+        }
+
+        $filenames = [];
+        $walk = function ($value) use (&$walk, &$filenames) {
+            if (is_array($value)) {
+                foreach ($value as $item) {
+                    $walk($item);
+                }
+
+                return;
+            }
+
+            if (is_string($value) && trim($value) !== '') {
+                $filenames[] = $value;
+            }
+        };
+
+        $walk($files);
+
+        return $filenames;
+    }
+
+    function hapus_file_desain_custom_json($files)
+    {
+        hapus_file_uploads('desain_custom', daftar_file_desain_custom($files));
+    }
+
+    function ambil_file_pesanan_terkait($whereSql)
+    {
+        global $db;
+
+        $fileRefs = [
+            'bukti_transaksi' => [],
+            'desain_custom' => [],
+        ];
+
+        $query = "SELECT
+                t.bukti_pembayaran,
+                dc.id_desain_custom,
+                dc.files AS desain_custom_files
+            FROM pesanan p
+            LEFT JOIN transaksi t ON t.id_pesanan = p.id_pesanan
+            LEFT JOIN desain_custom dc ON dc.id_desain_custom = p.id_desain_custom
+            WHERE $whereSql";
+
+        $result = mysqli_query($db, $query);
+        if (!$result) {
+            return $fileRefs;
+        }
+
+        while ($row = mysqli_fetch_assoc($result)) {
+            if (!empty($row['bukti_pembayaran'])) {
+                $fileRefs['bukti_transaksi'][] = $row['bukti_pembayaran'];
+            }
+
+            if (!empty($row['id_desain_custom']) && !empty($row['desain_custom_files'])) {
+                $fileRefs['desain_custom'][(int) $row['id_desain_custom']] = $row['desain_custom_files'];
+            }
+        }
+
+        return $fileRefs;
+    }
+
+    function ambil_file_desain_custom_customer($id_customer)
+    {
+        global $db;
+
+        $fileRefs = [];
+        $id_customer = intval($id_customer);
+        $result = mysqli_query($db, "SELECT id_desain_custom, files FROM desain_custom WHERE id_customer = $id_customer");
+
+        if (!$result) {
+            return $fileRefs;
+        }
+
+        while ($row = mysqli_fetch_assoc($result)) {
+            if (!empty($row['id_desain_custom']) && !empty($row['files'])) {
+                $fileRefs[(int) $row['id_desain_custom']] = $row['files'];
+            }
+        }
+
+        return $fileRefs;
+    }
+
+    function hapus_file_pesanan_terkait(array $fileRefs)
+    {
+        hapus_file_uploads('bukti_transaksi', $fileRefs['bukti_transaksi'] ?? []);
+
+        foreach (($fileRefs['desain_custom'] ?? []) as $files) {
+            hapus_file_desain_custom_json($files);
+        }
+    }
+
+    function hapus_desain_custom_tidak_dipakai(array $ids)
+    {
+        global $db;
+
+        $deletedIds = [];
+        foreach (array_unique(array_map('intval', $ids)) as $id) {
+            if ($id <= 0) {
+                continue;
+            }
+
+            $cek = mysqli_query($db, "SELECT COUNT(*) AS total FROM pesanan WHERE id_desain_custom = $id");
+            $row = $cek ? mysqli_fetch_assoc($cek) : null;
+
+            if (($row['total'] ?? 0) > 0) {
+                continue;
+            }
+
+            mysqli_query($db, "DELETE FROM desain_custom WHERE id_desain_custom = $id");
+            if (mysqli_affected_rows($db) > 0) {
+                $deletedIds[] = $id;
+            }
+        }
+
+        return $deletedIds;
+    }
+
+    function filter_file_desain_custom_terhapus(array $fileRefs, array $deletedCustomIds)
+    {
+        $allowed = array_flip(array_map('intval', $deletedCustomIds));
+        $fileRefs['desain_custom'] = array_intersect_key($fileRefs['desain_custom'] ?? [], $allowed);
+
+        return $fileRefs;
+    }
+
+    function hapus_pesanan_dan_file($id_pesanan)
+    {
+        global $db;
+
+        $id_pesanan = intval($id_pesanan);
+        if ($id_pesanan <= 0) {
+            return 0;
+        }
+
+        $fileRefs = ambil_file_pesanan_terkait("p.id_pesanan = $id_pesanan");
+        $customIds = array_keys($fileRefs['desain_custom']);
+
+        mysqli_begin_transaction($db);
+        mysqli_query($db, "DELETE FROM transaksi WHERE id_pesanan = $id_pesanan");
+        mysqli_query($db, "DELETE FROM pesanan WHERE id_pesanan = $id_pesanan");
+        $deleted = mysqli_affected_rows($db);
+
+        if ($deleted > 0) {
+            $deletedCustomIds = hapus_desain_custom_tidak_dipakai($customIds);
+            $fileRefs = filter_file_desain_custom_terhapus($fileRefs, $deletedCustomIds);
+            mysqli_commit($db);
+            hapus_file_pesanan_terkait($fileRefs);
+            return $deleted;
+        }
+
+        mysqli_rollback($db);
+        return 0;
     }
 
     // Admin
@@ -294,14 +501,32 @@
             {
                 global $db;
                 
-                $id = strip_tags($post['id_customer']);
-                
-                // query hapus data pengguna
-                $query = "DELETE FROM customer WHERE id_customer = $id";
-                
-                mysqli_query($db, $query);
-                
-                return mysqli_affected_rows($db);
+                $id = intval($post['id_customer'] ?? 0);
+
+                if ($id <= 0) {
+                    return 0;
+                }
+
+                $fileRefs = ambil_file_pesanan_terkait("p.id_customer = $id");
+                $fileRefs['desain_custom'] = $fileRefs['desain_custom'] + ambil_file_desain_custom_customer($id);
+
+                mysqli_begin_transaction($db);
+
+                mysqli_query($db, "DELETE t FROM transaksi t JOIN pesanan p ON t.id_pesanan = p.id_pesanan WHERE p.id_customer = $id");
+                mysqli_query($db, "DELETE FROM pesanan WHERE id_customer = $id");
+                mysqli_query($db, "DELETE FROM desain_custom WHERE id_customer = $id");
+                mysqli_query($db, "DELETE FROM customer WHERE id_customer = $id");
+
+                $deleted = mysqli_affected_rows($db);
+
+                if ($deleted > 0) {
+                    mysqli_commit($db);
+                    hapus_file_pesanan_terkait($fileRefs);
+                    return $deleted;
+                }
+
+                mysqli_rollback($db);
+                return 0;
             }
 
         // .Akun Section
@@ -315,13 +540,10 @@
 
                 $jenis_bahan    = htmlspecialchars(strip_tags($post['jenis_bahan']));
                 $id_warna       = htmlspecialchars(strip_tags($post['id_warna']));
-                $stok           = htmlspecialchars(strip_tags($post['stok']));
-                $harga_bahan    = htmlspecialchars(strip_tags($post['harga_bahan']));
 
                 // insert ke tabel bahan
-                $queryBahan = "INSERT INTO bahan 
-                    VALUES(NULL, '$jenis_bahan', '$id_warna', '$stok', '$harga_bahan')
-                ";
+                $queryBahan = "INSERT INTO bahan (jenis_bahan, id_warna)
+                    VALUES('$jenis_bahan', '$id_warna')";
 
                 mysqli_query($db, $queryBahan);
 
@@ -336,14 +558,10 @@
                 $id_bahan       = htmlspecialchars(strip_tags($post['id_bahan']));
                 $jenis_bahan    = htmlspecialchars(strip_tags($post['jenis_bahan']));
                 $id_warna       = htmlspecialchars(strip_tags($post['id_warna']));
-                $stok           = htmlspecialchars(strip_tags($post['stok']));
-                $harga_bahan    = htmlspecialchars(strip_tags($post['harga_bahan']));
 
                 $queryBahan = "UPDATE bahan SET 
                     jenis_bahan = '$jenis_bahan',
-                    id_warna = '$id_warna',
-                    stok = '$stok',
-                    harga_bahan = '$harga_bahan'
+                    id_warna = '$id_warna'
                     WHERE id_bahan = $id_bahan";
 
                 mysqli_query($db, $queryBahan);
@@ -357,14 +575,29 @@
             {
                 global $db;
                 
-                $id = strip_tags($post['id_bahan']);
-                
-                // query hapus data pengguna
-                $query = "DELETE FROM bahan WHERE id_bahan = $id";
-                
-                mysqli_query($db, $query);
-                
-                return mysqli_affected_rows($db);
+                $id = intval($post['id_bahan'] ?? 0);
+
+                if ($id <= 0) {
+                    return 0;
+                }
+
+                $fileRefs = ambil_file_pesanan_terkait("p.id_bahan = $id");
+                $customIds = array_keys($fileRefs['desain_custom']);
+
+                mysqli_begin_transaction($db);
+                mysqli_query($db, "DELETE FROM bahan WHERE id_bahan = $id");
+                $deleted = mysqli_affected_rows($db);
+
+                if ($deleted > 0) {
+                    $deletedCustomIds = hapus_desain_custom_tidak_dipakai($customIds);
+                    $fileRefs = filter_file_desain_custom_terhapus($fileRefs, $deletedCustomIds);
+                    mysqli_commit($db);
+                    hapus_file_pesanan_terkait($fileRefs);
+                    return $deleted;
+                }
+
+                mysqli_rollback($db);
+                return 0;
             }
         
         // .Bahan Section
@@ -402,11 +635,29 @@
             {
                 global $db;
 
-                $id = strip_tags($post['id_warna']);
-                $query = "DELETE FROM warna WHERE id_warna = $id";
-                mysqli_query($db, $query);
+                $id = intval($post['id_warna'] ?? 0);
 
-                return mysqli_affected_rows($db);
+                if ($id <= 0) {
+                    return 0;
+                }
+
+                $fileRefs = ambil_file_pesanan_terkait("p.id_bahan IN (SELECT id_bahan FROM bahan WHERE id_warna = $id)");
+                $customIds = array_keys($fileRefs['desain_custom']);
+
+                mysqli_begin_transaction($db);
+                mysqli_query($db, "DELETE FROM warna WHERE id_warna = $id");
+                $deleted = mysqli_affected_rows($db);
+
+                if ($deleted > 0) {
+                    $deletedCustomIds = hapus_desain_custom_tidak_dipakai($customIds);
+                    $fileRefs = filter_file_desain_custom_terhapus($fileRefs, $deletedCustomIds);
+                    mysqli_commit($db);
+                    hapus_file_pesanan_terkait($fileRefs);
+                    return $deleted;
+                }
+
+                mysqli_rollback($db);
+                return 0;
             }
 
         // .Warna Section
@@ -427,8 +678,13 @@
                 ";
 
                 mysqli_query($db, $queryProduk);
+                $affected = mysqli_affected_rows($db);
 
-                return mysqli_affected_rows($db);
+                if ($affected <= 0 && $gambar_produk) {
+                    hapus_file_upload('produk', $gambar_produk);
+                }
+
+                return $affected;
             }
 
             // Ubah Produk
@@ -436,18 +692,23 @@
             {
                 global $db;
 
-                $id_produk = htmlspecialchars(strip_tags($post['id_produk']));
+                $id_produk = intval($post['id_produk'] ?? 0);
                 $nama_produk = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama_produk'])));
                 $deskripsi = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['deskripsi'])));
-                $gambar_produk = isset($post['existing_gambar_produk']) ? htmlspecialchars(strip_tags($post['existing_gambar_produk'])) : null;
+                $produk_lama = select("SELECT gambar_produk FROM produk WHERE id_produk = $id_produk LIMIT 1");
+
+                if (empty($produk_lama)) {
+                    return 0;
+                }
+
+                $gambar_lama = $produk_lama[0]['gambar_produk'] ?? null;
+                $gambar_produk = $gambar_lama;
+                $gambar_baru = null;
 
                 if (isset($files['foto']) && $files['foto']['error'] === UPLOAD_ERR_OK) {
                     $namaBaru = upload_foto();
                     if ($namaBaru) {
-                        $uploadDir = __DIR__ . '/../../assets/img/produk/';
-                        if ($gambar_produk && file_exists($uploadDir . $gambar_produk)) {
-                            @unlink($uploadDir . $gambar_produk);
-                        }
+                        $gambar_baru = $namaBaru;
                         $gambar_produk = mysqli_real_escape_string($db, $namaBaru);
                     }
                 }
@@ -458,9 +719,16 @@
                     gambar_produk = " . ($gambar_produk ? "'$gambar_produk'" : "NULL") . "
                     WHERE id_produk = $id_produk";
 
-                mysqli_query($db, $queryProduk);
+                $success = mysqli_query($db, $queryProduk);
+                $affected = mysqli_affected_rows($db);
 
-                return mysqli_affected_rows($db);
+                if ($success && $gambar_baru && $gambar_lama && $gambar_lama !== $gambar_baru) {
+                    hapus_file_upload('produk', $gambar_lama);
+                } elseif (!$success && $gambar_baru) {
+                    hapus_file_upload('produk', $gambar_baru);
+                }
+
+                return $affected;
             }
 
             // Hapus Produk
@@ -468,27 +736,46 @@
             {
                 global $db;
 
-                $id = strip_tags($post['id_produk']);
-                $gambar_produk = null;
+                $id = intval($post['id_produk'] ?? 0);
 
-                $query = "SELECT gambar_produk FROM produk WHERE id_produk = $id";
-                $result = mysqli_query($db, $query);
-                if ($row = mysqli_fetch_assoc($result)) {
-                    $gambar_produk = $row['gambar_produk'];
+                if ($id <= 0) {
+                    return 0;
                 }
 
-                $query = "DELETE FROM produk WHERE id_produk = $id";
-                mysqli_query($db, $query);
-                $deleted = mysqli_affected_rows($db);
+                $produk = select("SELECT gambar_produk FROM produk WHERE id_produk = $id LIMIT 1");
+                $gambar_produk = $produk[0]['gambar_produk'] ?? null;
 
-                if ($deleted && $gambar_produk) {
-                    $filePath = __DIR__ . '/../../assets/img/produk/' . $gambar_produk;
-                    if (file_exists($filePath)) {
-                        @unlink($filePath);
+                $gambar_desain = [];
+                $resultDesain = mysqli_query($db, "SELECT gambar_desain FROM desain WHERE id_produk = $id");
+                if ($resultDesain) {
+                    while ($row = mysqli_fetch_assoc($resultDesain)) {
+                        if (!empty($row['gambar_desain'])) {
+                            $gambar_desain[] = $row['gambar_desain'];
+                        }
                     }
                 }
 
-                return $deleted;
+                $fileRefs = ambil_file_pesanan_terkait("p.id_produk = $id");
+                $customIds = array_keys($fileRefs['desain_custom']);
+
+                mysqli_begin_transaction($db);
+                mysqli_query($db, "DELETE FROM produk WHERE id_produk = $id");
+                $deleted = mysqli_affected_rows($db);
+
+                if ($deleted > 0) {
+                    $deletedCustomIds = hapus_desain_custom_tidak_dipakai($customIds);
+                    $fileRefs = filter_file_desain_custom_terhapus($fileRefs, $deletedCustomIds);
+                    mysqli_commit($db);
+
+                    hapus_file_upload('produk', $gambar_produk);
+                    hapus_file_uploads('desain', $gambar_desain);
+                    hapus_file_pesanan_terkait($fileRefs);
+
+                    return $deleted;
+                }
+
+                mysqli_rollback($db);
+                return 0;
             }
 
         // .Produk Section
@@ -502,36 +789,45 @@
 
                 $id_produk = htmlspecialchars(strip_tags($post['id_produk']));
                 $nama_desain = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama_desain'])));
-                $harga_desain = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['harga_desain'])));
                 $deskripsi = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['deskripsi'])));
                 $gambar_desain = upload_foto('foto', 'desain');
                 $gambar_desain = $gambar_desain ?? '';
 
-                $query = "INSERT INTO desain (id_produk, nama_desain, gambar_desain, harga_desain, deskripsi)
-                    VALUES('$id_produk', '$nama_desain', '$gambar_desain', '$harga_desain', '$deskripsi')";
+                $query = "INSERT INTO desain (id_produk, nama_desain, gambar_desain, deskripsi)
+                    VALUES('$id_produk', '$nama_desain', '$gambar_desain', '$deskripsi')";
 
                 mysqli_query($db, $query);
-                return mysqli_affected_rows($db);
+                $affected = mysqli_affected_rows($db);
+
+                if ($affected <= 0 && $gambar_desain) {
+                    hapus_file_upload('desain', $gambar_desain);
+                }
+
+                return $affected;
             }
             // Ubah Desain
             function ubah_desain($post, $files)
             {
                 global $db;
 
-                $id_desain = htmlspecialchars(strip_tags($post['id_desain']));
-                $id_produk = htmlspecialchars(strip_tags($post['id_produk']));
+                $id_desain = intval($post['id_desain'] ?? 0);
+                $id_produk = intval($post['id_produk'] ?? 0);
                 $nama_desain = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['nama_desain'])));
-                $harga_desain = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['harga_desain'])));
                 $deskripsi = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($post['deskripsi'])));
-                $gambar_desain = isset($post['existing_gambar_desain']) ? htmlspecialchars(strip_tags($post['existing_gambar_desain'])) : '';
+                $desain_lama = select("SELECT gambar_desain FROM desain WHERE id_desain = $id_desain LIMIT 1");
+
+                if (empty($desain_lama)) {
+                    return 0;
+                }
+
+                $gambar_lama = $desain_lama[0]['gambar_desain'] ?? '';
+                $gambar_desain = $gambar_lama;
+                $gambar_baru = null;
 
                 if (isset($files['foto']) && $files['foto']['error'] === UPLOAD_ERR_OK) {
                     $namaBaru = upload_foto('foto', 'desain');
                     if ($namaBaru) {
-                        $uploadDir = __DIR__ . '/../../assets/img/desain/';
-                        if ($gambar_desain && file_exists($uploadDir . $gambar_desain)) {
-                            @unlink($uploadDir . $gambar_desain);
-                        }
+                        $gambar_baru = $namaBaru;
                         $gambar_desain = mysqli_real_escape_string($db, $namaBaru);
                     }
                 }
@@ -540,39 +836,53 @@
                     id_produk = '$id_produk',
                     nama_desain = '$nama_desain',
                     gambar_desain = '$gambar_desain',
-                    harga_desain = '$harga_desain',
                     deskripsi = '$deskripsi'
                     WHERE id_desain = $id_desain";
 
-                mysqli_query($db, $query);
-                return mysqli_affected_rows($db);
+                $success = mysqli_query($db, $query);
+                $affected = mysqli_affected_rows($db);
+
+                if ($success && $gambar_baru && $gambar_lama && $gambar_lama !== $gambar_baru) {
+                    hapus_file_upload('desain', $gambar_lama);
+                } elseif (!$success && $gambar_baru) {
+                    hapus_file_upload('desain', $gambar_baru);
+                }
+
+                return $affected;
             }
             // Hapus Desain
             function hapus_desain($post)
             {
                 global $db;
 
-                $id = strip_tags($post['id_desain']);
-                $gambar_desain = null;
+                $id = intval($post['id_desain'] ?? 0);
 
-                $query = "SELECT gambar_desain FROM desain WHERE id_desain = $id";
-                $result = mysqli_query($db, $query);
-                if ($row = mysqli_fetch_assoc($result)) {
-                    $gambar_desain = $row['gambar_desain'];
+                if ($id <= 0) {
+                    return 0;
                 }
 
-                $query = "DELETE FROM desain WHERE id_desain = $id";
-                mysqli_query($db, $query);
+                $desain = select("SELECT gambar_desain FROM desain WHERE id_desain = $id LIMIT 1");
+                $gambar_desain = $desain[0]['gambar_desain'] ?? null;
+                $fileRefs = ambil_file_pesanan_terkait("p.id_desain = $id");
+                $customIds = array_keys($fileRefs['desain_custom']);
+
+                mysqli_begin_transaction($db);
+                mysqli_query($db, "DELETE FROM desain WHERE id_desain = $id");
                 $deleted = mysqli_affected_rows($db);
 
-                if ($deleted && $gambar_desain) {
-                    $filePath = __DIR__ . '/../../assets/img/desain/' . $gambar_desain;
-                    if (file_exists($filePath)) {
-                        @unlink($filePath);
-                    }
+                if ($deleted > 0) {
+                    $deletedCustomIds = hapus_desain_custom_tidak_dipakai($customIds);
+                    $fileRefs = filter_file_desain_custom_terhapus($fileRefs, $deletedCustomIds);
+                    mysqli_commit($db);
+
+                    hapus_file_upload('desain', $gambar_desain);
+                    hapus_file_pesanan_terkait($fileRefs);
+
+                    return $deleted;
                 }
 
-                return $deleted;
+                mysqli_rollback($db);
+                return 0;
             }
 
         // .Desain Section
@@ -730,29 +1040,25 @@
 
                 // Collect all uploaded files
                 $uploadedFiles = [];
+                $customDesignDir = 'desain_custom';
                 
                 // Upload design images
-                $gambar_depan = upload_foto('tampak_depan', 'desain');
+                $gambar_depan = upload_foto('tampak_depan', $customDesignDir);
                 if ($gambar_depan) $uploadedFiles['depan'] = $gambar_depan;
                 
-                $gambar_belakang = upload_foto('tampak_belakang', 'desain');
+                $gambar_belakang = upload_foto('tampak_belakang', $customDesignDir);
                 if ($gambar_belakang) $uploadedFiles['belakang'] = $gambar_belakang;
                 
-                $gambar_kanan = upload_foto('tampak_kanan', 'desain');
+                $gambar_kanan = upload_foto('tampak_kanan', $customDesignDir);
                 if ($gambar_kanan) $uploadedFiles['kanan'] = $gambar_kanan;
                 
-                $gambar_kiri = upload_foto('tampak_kiri', 'desain');
+                $gambar_kiri = upload_foto('tampak_kiri', $customDesignDir);
                 if ($gambar_kiri) $uploadedFiles['kiri'] = $gambar_kiri;
 
                 // Upload multiple logos
-                $logoFiles = upload_logo_custom($_FILES['logo'] ?? [], 'desain');
+                $logoFiles = upload_logo_custom($files['logo'] ?? [], $customDesignDir);
                 if ($logoFiles === false) {
-                    foreach ($uploadedFiles as $uploadedFile) {
-                        $filePath = __DIR__ . '/../../assets/img/desain/' . $uploadedFile;
-                        if (file_exists($filePath)) {
-                            @unlink($filePath);
-                        }
-                    }
+                    hapus_file_uploads($customDesignDir, daftar_file_desain_custom($uploadedFiles));
                     return false;
                 }
                 
@@ -780,9 +1086,10 @@
 
                 if (mysqli_query($db, $queryDesain)) {
                     return mysqli_insert_id($db);
-                } else {
-                    return false;
                 }
+
+                hapus_file_uploads($customDesignDir, daftar_file_desain_custom($uploadedFiles));
+                return false;
             }
 
             // Tambah Pesanan
@@ -835,29 +1142,14 @@
                 $jumlah_beli = array_sum($sizes);
                 $ukuran_json = mysqli_real_escape_string($db, json_encode($sizes));
 
-                // Harga bahan dan desain dihitung per item
-                $harga_bahan = 0;
-                $harga_desain = 0;
-                if ($id_bahan) {
-                    $q = mysqli_query($db, "SELECT harga_bahan FROM bahan WHERE id_bahan = $id_bahan LIMIT 1");
-                    if ($r = mysqli_fetch_assoc($q)) {
-                        $harga_bahan = intval($r['harga_bahan']);
-                    }
-                }
-
-                if ($id_desain) {
-                    $q = mysqli_query($db, "SELECT harga_desain FROM desain WHERE id_desain = $id_desain LIMIT 1");
-                    if ($r = mysqli_fetch_assoc($q)) {
-                        $harga_desain = intval($r['harga_desain']);
-                    }
-                }
-
-                $harga = hitung_total_harga_pesanan($harga_bahan, $harga_desain, $jumlah_beli);
-                $harga_dp = intval($post['harga_dp'] ?? 0);
+                // Harga pesanan ditentukan oleh admin setelah pesanan dibuat.
+                $harga = 0;
+                $harga_dp = 0;
+                $status_harga = 'Menunggu Harga';
 
                 // Insert pesanan - id_desain_custom bisa null jika pilih design existing
-                $queryPesanan = "INSERT INTO pesanan (id_customer, id_produk, id_bahan, id_desain, id_desain_custom, jumlah_beli, ukuran, harga, harga_dp)
-                    VALUES($id_customer, $id_produk, $id_bahan, " . ($id_desain ? $id_desain : 'NULL') . ", " . ($id_desain_custom ? $id_desain_custom : 'NULL') . ", $jumlah_beli, '$ukuran_json', $harga, $harga_dp)";
+                $queryPesanan = "INSERT INTO pesanan (id_customer, id_produk, id_bahan, id_desain, id_desain_custom, jumlah_beli, ukuran, harga, harga_dp, total_harga, catatan_harga, status_harga, tanggal_pesan, tanggal_selesai)
+                    VALUES($id_customer, $id_produk, $id_bahan, " . ($id_desain ? $id_desain : 'NULL') . ", " . ($id_desain_custom ? $id_desain_custom : 'NULL') . ", $jumlah_beli, '$ukuran_json', $harga, $harga_dp, NULL, NULL, '$status_harga', NOW(), NULL)";
 
                 mysqli_query($db, $queryPesanan);
                 return mysqli_insert_id($db);
@@ -872,6 +1164,25 @@
             //   $id_pesanan: id pesanan yang terkait
             //   $total_harga: total harga pesanan (dari tabel pesanan)
             //   $bukti_filename: (optional) nama file bukti yang sudah di-upload
+            function nilai_bukti_pembayaran($metode, $bukti_filename = null)
+            {
+                global $db;
+
+                if (!empty($bukti_filename)) {
+                    return mysqli_real_escape_string($db, $bukti_filename);
+                }
+
+                if ($metode === 'qris') {
+                    return 'QRIS';
+                }
+
+                if ($metode === 'virtual_account') {
+                    return 'VA BCA 1234567890';
+                }
+
+                return strtoupper($metode);
+            }
+
             function tambah_transaksi($post, $id_pesanan, $total_harga, $bukti_filename = null)
             {
                 global $db;
@@ -893,28 +1204,12 @@
 
                 if ($jenis_pembayaran === 'lunas') {
                     $jumlah_bayar = $total_harga;
-                    $status_pembayaran = 'Lunas';
-                } elseif ($jumlah_bayar <= 0 || $jumlah_bayar >= $total_harga) {
+                } elseif ($jumlah_bayar < intdiv($total_harga + 1, 2) || $jumlah_bayar >= $total_harga) {
                     return false;
-                } else {
-                    $status_pembayaran = 'DP';
                 }
 
-                // Jika file bukti telah di-upload dan diberikan, simpan nama file tersebut.
-                // Jika tidak ada bukti file, isi deskripsi default berdasarkan metode (QRIS/VA dll.)
-                $bukti_pembayaran = '';
-                if (!empty($bukti_filename)) {
-                    // simpan nama file yang valid (string) ke kolom bukti_pembayaran
-                    $bukti_pembayaran = mysqli_real_escape_string($db, $bukti_filename);
-                } else {
-                    if ($metode === 'qris') {
-                        $bukti_pembayaran = 'QRIS';
-                    } elseif ($metode === 'virtual_account') {
-                        $bukti_pembayaran = 'VA BCA 1234567890';
-                    } else {
-                        $bukti_pembayaran = strtoupper($metode);
-                    }
-                }
+                $status_pembayaran = 'Pending';
+                $bukti_pembayaran = nilai_bukti_pembayaran($metode, $bukti_filename);
 
                 $tanggal = date('Y-m-d');
 

@@ -39,49 +39,8 @@
     exit;
   }
 
-  // Sertakan dependencies
-  include '../../assets/layout/users/header.php';
-  
-  if (isset($_POST['update_bukti_pembayaran'])) {
-    $id_transaksi = intval($_POST['id_transaksi'] ?? 0);
-    
-    if ($id_transaksi > 0 && isset($_FILES['bukti_pembayaran']) && $_FILES['bukti_pembayaran']['error'] === UPLOAD_ERR_OK) {
-      $bukti_file = upload_foto('bukti_pembayaran', 'bukti_transaksi');
-      
-      if ($bukti_file) {
-        $bukti_file_escaped = mysqli_real_escape_string($db, $bukti_file);
-        $query_update = "UPDATE transaksi SET bukti_pembayaran = '$bukti_file_escaped'
-          WHERE id_transaksi = $id_transaksi AND id_pesanan = $id_pesanan";
-        
-        if (mysqli_query($db, $query_update) && mysqli_affected_rows($db) > 0) {
-          $popup = true;
-          $statusPopup = 'success';
-          $pesan = 'Bukti pembayaran berhasil diperbarui!';
-        } else {
-          $popup = true;
-          $statusPopup = 'danger';
-          $pesan = 'Gagal mengupdate bukti pembayaran.';
-        }
-      } else {
-        $popup = true;
-        $statusPopup = 'danger';
-        $pesan = 'Gagal mengupload file.';
-      }
-    } else {
-      $popup = true;
-      $statusPopup = 'danger';
-      $pesan = 'Silahkan pilih file bukti pembayaran.';
-    }
-    
-    // Reload halaman untuk refresh data
-    if ($statusPopup === 'success') {
-      echo '<div class="alert alert-' . $statusPopup . ' alert-dismissible fade show" role="alert" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: auto; max-width: 400px;">
-              <i class="bi bi-check-circle me-2"></i>' . $pesan . '
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>';
-      header('Refresh: 2; url=kuitansi.php?id_pesanan=' . $id_pesanan);
-    }
-  }
+  $error_pembayaran = $_SESSION['error_pembayaran'] ?? '';
+  unset($_SESSION['error_pembayaran']);
 
   // Query untuk mendapatkan data pesanan lengkap
   // JOIN dengan customer, produk, bahan, desain (untuk design existing)
@@ -97,14 +56,18 @@
       p.ukuran,
       p.harga,
       p.harga_dp,
+      p.total_harga,
+      p.status_harga,
+      p.status_pengerjaan,
+      p.tanggal_pesan,
+      p.tanggal_selesai,
+      p.catatan_harga,
       c.nama as customer_nama,
       c.no_hp as customer_hp,
       c.alamat as customer_alamat,
       pr.nama_produk,
       b.jenis_bahan,
-      b.harga_bahan,
-      d.nama_desain,
-      d.harga_desain
+      d.nama_desain
     FROM pesanan p
     JOIN customer c ON p.id_customer = c.id_customer
     JOIN produk pr ON p.id_produk = pr.id_produk
@@ -117,12 +80,157 @@
   $pesanan_data = select($query_pesanan);
 
   if (empty($pesanan_data)) {
-    echo '<div class="alert alert-danger" role="alert">Pesanan tidak ditemukan!</div>';
     header('Location: index.php');
     exit;
   }
 
   $pesanan = $pesanan_data[0];
+
+  if (isset($_POST['update_bukti_pembayaran'])) {
+    $id_transaksi = intval($_POST['id_transaksi'] ?? 0);
+    $flash_type = 'danger';
+    $flash_message = 'Silahkan pilih file bukti pembayaran.';
+
+    if ($id_transaksi > 0 && isset($_FILES['bukti_pembayaran']) && $_FILES['bukti_pembayaran']['error'] === UPLOAD_ERR_OK) {
+      $transaksi_lama = select("SELECT bukti_pembayaran FROM transaksi WHERE id_transaksi = $id_transaksi AND id_pesanan = $id_pesanan LIMIT 1");
+      $bukti_lama = $transaksi_lama[0]['bukti_pembayaran'] ?? '';
+      $bukti_file = upload_foto('bukti_pembayaran', 'bukti_transaksi');
+
+      if ($bukti_file) {
+        $bukti_file_escaped = mysqli_real_escape_string($db, $bukti_file);
+        $query_update = "UPDATE transaksi SET bukti_pembayaran = '$bukti_file_escaped'
+          WHERE id_transaksi = $id_transaksi AND id_pesanan = $id_pesanan";
+
+        if (mysqli_query($db, $query_update) && mysqli_affected_rows($db) > 0) {
+          if ($bukti_lama !== $bukti_file) {
+            hapus_file_upload('bukti_transaksi', $bukti_lama);
+          }
+
+          $flash_type = 'success';
+          $flash_message = 'Bukti pembayaran berhasil diperbarui!';
+        } else {
+          hapus_file_upload('bukti_transaksi', $bukti_file);
+          $flash_message = 'Gagal mengupdate bukti pembayaran.';
+        }
+      } else {
+        $flash_message = 'Gagal mengupload file.';
+      }
+    }
+
+    if ($flash_type === 'success') {
+      $_SESSION['success'] = $flash_message;
+    } else {
+      $_SESSION['error_pembayaran'] = $flash_message;
+    }
+
+    header('Location: kuitansi.php?id_pesanan=' . $id_pesanan);
+    exit;
+  }
+
+  if (isset($_POST['submit_pembayaran'])) {
+    $total_harga_pembayaran = intval($pesanan['total_harga'] ?? $pesanan['harga'] ?? 0);
+    $status_harga_pembayaran = $pesanan['status_harga'] ?? 'Menunggu Harga';
+    $transaksi_existing = select("SELECT id_transaksi, status_pembayaran FROM transaksi WHERE id_pesanan = $id_pesanan LIMIT 1");
+    $jenis_pembayaran = htmlspecialchars(strip_tags($_POST['jenis_pembayaran'] ?? ''));
+    $nominal_dp = max(0, intval($_POST['nominal_dp'] ?? 0));
+    $minimal_dp = intdiv($total_harga_pembayaran + 1, 2);
+    $error_pembayaran = '';
+
+    if (!empty($transaksi_existing)) {
+      $error_pembayaran = 'Pembayaran untuk pesanan ini sudah dibuat.';
+    } elseif ($total_harga_pembayaran <= 0 || $status_harga_pembayaran === 'Menunggu Harga') {
+      $error_pembayaran = 'Pembayaran belum dapat dilakukan karena admin belum memberikan harga.';
+    } elseif (!in_array($jenis_pembayaran, ['dp', 'lunas'], true)) {
+      $error_pembayaran = 'Pilih jenis pembayaran terlebih dahulu.';
+    } elseif ($jenis_pembayaran === 'dp' && $nominal_dp < $minimal_dp) {
+      $error_pembayaran = 'Nominal DP minimal Rp ' . number_format($minimal_dp) . '.';
+    } elseif ($jenis_pembayaran === 'dp' && $nominal_dp >= $total_harga_pembayaran) {
+      $error_pembayaran = 'Jika ingin membayar penuh, pilih opsi Lunas.';
+    }
+
+    $bukti_file = null;
+    if (empty($error_pembayaran) && isset($_FILES['bukti_pembayaran']) && $_FILES['bukti_pembayaran']['error'] === UPLOAD_ERR_OK) {
+      $bukti_file = upload_foto('bukti_pembayaran', 'bukti_transaksi');
+      if (!$bukti_file) {
+        $error_pembayaran = 'Bukti pembayaran gagal diupload. Gunakan file gambar yang valid.';
+      }
+    }
+
+    if (empty($error_pembayaran)) {
+      $post_pembayaran = $_POST;
+      $post_pembayaran['jumlah_bayar'] = $jenis_pembayaran === 'lunas' ? $total_harga_pembayaran : $nominal_dp;
+
+      $id_transaksi = tambah_transaksi($post_pembayaran, $id_pesanan, $total_harga_pembayaran, $bukti_file);
+
+      if ($id_transaksi) {
+        $_SESSION['success'] = 'Pembayaran berhasil dikirim dan menunggu validasi admin.';
+        header('Location: kuitansi.php?id_pesanan=' . $id_pesanan);
+        exit;
+      }
+
+      if ($bukti_file) {
+        hapus_file_upload('bukti_transaksi', $bukti_file);
+      }
+      $error_pembayaran = 'Pembayaran gagal disimpan. Pastikan nominal DP minimal setengah dari total harga.';
+    }
+  }
+
+  if (isset($_POST['submit_pelunasan_dp'])) {
+    $total_harga_pembayaran = intval($pesanan['total_harga'] ?? $pesanan['harga'] ?? 0);
+    $transaksi_dp = select("SELECT id_transaksi, status_pembayaran, jumlah_bayar, bukti_pembayaran FROM transaksi WHERE id_pesanan = $id_pesanan LIMIT 1");
+    $transaksi_pelunasan = $transaksi_dp[0] ?? null;
+    $jumlah_terbayar = intval($transaksi_pelunasan['jumlah_bayar'] ?? 0);
+    $sisa_pelunasan = max(0, $total_harga_pembayaran - $jumlah_terbayar);
+    $metode_pelunasan = mysqli_real_escape_string($db, htmlspecialchars(strip_tags($_POST['metode_pembayaran'] ?? '')));
+    $metode_valid = ['qris', 'virtual_account', 'transfer', 'cash'];
+    $bukti_file = null;
+    $error_pembayaran = '';
+
+    if (!$transaksi_pelunasan || ($transaksi_pelunasan['status_pembayaran'] ?? '') !== 'DP') {
+      $error_pembayaran = 'Pelunasan hanya bisa dilakukan setelah pembayaran DP divalidasi admin.';
+    } elseif ($total_harga_pembayaran <= 0 || $sisa_pelunasan <= 0) {
+      $error_pembayaran = 'Pesanan ini tidak memiliki sisa pembayaran.';
+    } elseif (!in_array($metode_pelunasan, $metode_valid, true)) {
+      $error_pembayaran = 'Pilih metode pelunasan terlebih dahulu.';
+    }
+
+    if (empty($error_pembayaran) && isset($_FILES['bukti_pembayaran']) && $_FILES['bukti_pembayaran']['error'] === UPLOAD_ERR_OK) {
+      $bukti_file = upload_foto('bukti_pembayaran', 'bukti_transaksi');
+      if (!$bukti_file) {
+        $error_pembayaran = 'Bukti pelunasan gagal diupload. Gunakan file gambar yang valid.';
+      }
+    }
+
+    if (empty($error_pembayaran)) {
+      $id_transaksi = intval($transaksi_pelunasan['id_transaksi']);
+      $bukti_lama = $transaksi_pelunasan['bukti_pembayaran'] ?? '';
+      $bukti_pembayaran = nilai_bukti_pembayaran($metode_pelunasan, $bukti_file);
+      $query_update = "UPDATE transaksi
+        SET metode_pembayaran = '$metode_pelunasan',
+            status_pembayaran = 'Pending',
+            jumlah_bayar = $total_harga_pembayaran,
+            bukti_pembayaran = '$bukti_pembayaran',
+            tanggal_pembayaran = CURDATE()
+        WHERE id_transaksi = $id_transaksi
+          AND id_pesanan = $id_pesanan";
+
+      if (mysqli_query($db, $query_update) && mysqli_affected_rows($db) > 0) {
+        if ($bukti_lama !== $bukti_pembayaran) {
+          hapus_file_upload('bukti_transaksi', $bukti_lama);
+        }
+
+        $_SESSION['success'] = 'Pelunasan berhasil dikirim dan menunggu validasi admin.';
+        header('Location: kuitansi.php?id_pesanan=' . $id_pesanan);
+        exit;
+      }
+
+      if ($bukti_file) {
+        hapus_file_upload('bukti_transaksi', $bukti_file);
+      }
+
+      $error_pembayaran = 'Pelunasan gagal disimpan. Silakan coba lagi.';
+    }
+  }
 
   // Query untuk mendapatkan data transaksi
   $query_transaksi = "
@@ -135,6 +243,7 @@
       tanggal_pembayaran
     FROM transaksi
     WHERE id_pesanan = $id_pesanan
+    ORDER BY id_transaksi DESC
     LIMIT 1
   ";
 
@@ -152,6 +261,8 @@
   // Parse ukuran dari JSON
   $ukuran = json_decode($pesanan['ukuran'], true) ?? [];
 
+  include '../../assets/layout/users/header.php';
+
 ?>
 
 <main class="">
@@ -159,6 +270,20 @@
     <div class="container">
       <div class="row justify-content-center">
         <div class="col-lg-8">
+          <?php if (!empty($_SESSION['success'])): ?>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($_SESSION['success']) ?>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <?php unset($_SESSION['success']); ?>
+          <?php endif; ?>
+
+          <?php if (!empty($error_pembayaran)): ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-circle me-2"></i><?= htmlspecialchars($error_pembayaran) ?>
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          <?php endif; ?>
 
           <!-- KUITANSI CARD -->
           <div class="card border-0 shadow-lg rounded-5" id="kuitansi-container">
@@ -179,30 +304,55 @@
                   </div>
                   <div class="mb-3">
                     <p class="text-muted small mb-1">Tanggal Pesanan</p>
-                    <p class="fw-bold"><?= isset($transaksi['tanggal_pembayaran']) ? date('d F Y', strtotime($transaksi['tanggal_pembayaran'])) : date('d F Y') ?></p>
+                    <p class="fw-bold"><?= format_tanggal_pesanan($pesanan['tanggal_pesan'] ?? null) ?></p>
+                  </div>
+                  <div class="mb-3">
+                    <p class="text-muted small mb-1">Tanggal Selesai</p>
+                    <p class="fw-bold"><?= format_tanggal_pesanan($pesanan['tanggal_selesai'] ?? null) ?></p>
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="mb-3">
-                    <p class="text-muted small mb-1">Status Pembayaran</p>
+                    <p class="text-muted small mb-1">Status Harga</p>
                     <p class="fw-bold">
-                      <?php if ($transaksi): ?>
-                        <span class="badge 
-                          <?php 
-                            if ($transaksi['status_pembayaran'] === 'Lunas') {
-                              echo 'bg-success';
-                            } elseif ($transaksi['status_pembayaran'] === 'DP') {
-                              echo 'bg-warning';
-                            } else {
-                              echo 'bg-secondary';
-                            }
-                          ?>
-                        ">
-                          <?= htmlspecialchars($transaksi['status_pembayaran']) ?>
-                        </span>
-                      <?php else: ?>
-                        <span class="badge bg-secondary">Menunggu Konfirmasi</span>
-                      <?php endif; ?>
+                      <?php
+                        $statusHarga = $pesanan['status_harga'] ?? 'Menunggu Harga';
+                        $labelStatusHarga = $statusHarga === 'Menunggu Harga' ? 'Pending' : $statusHarga;
+                        if ($statusHarga === 'Disetujui') {
+                          $statusPembayaranHarga = $transaksi['status_pembayaran'] ?? '';
+                          if (in_array($statusPembayaranHarga, ['DP', 'Lunas'], true)) {
+                            $labelStatusHarga = 'Disetujui - ' . $statusPembayaranHarga;
+                          } elseif ($statusPembayaranHarga === 'Pending') {
+                            $labelStatusHarga = 'Disetujui - Menunggu Validasi';
+                          } else {
+                            $labelStatusHarga = 'Disetujui - Belum Bayar';
+                          }
+                        }
+                        $badgeHarga = match($statusHarga) {
+                          'Harga Diberikan' => 'info',
+                          'Disetujui' => 'success',
+                          'Ditolak' => 'danger',
+                          default => 'secondary'
+                        };
+                      ?>
+                      <span class="badge bg-<?= $badgeHarga ?>"><?= htmlspecialchars($labelStatusHarga) ?></span>
+                    </p>
+                  </div>
+                  <div class="mb-3">
+                    <p class="text-muted small mb-1">Status Pengerjaan</p>
+                    <p class="fw-bold">
+                      <?php
+                        $statusPengerjaan = $pesanan['status_pengerjaan'] ?? 'Menunggu Pembayaran';
+                        $badgePengerjaan = match($statusPengerjaan) {
+                          'Menunggu Diproses' => 'info',
+                          'Sedang Diproses' => 'warning',
+                          'Selesai' => 'success',
+                          'Dibatalkan' => 'danger',
+                          default => 'secondary'
+                        };
+                        $textPengerjaan = $statusPengerjaan === 'Sedang Diproses' ? 'text-dark' : '';
+                      ?>
+                      <span class="badge bg-<?= $badgePengerjaan ?> <?= $textPengerjaan ?>"><?= htmlspecialchars($statusPengerjaan) ?></span>
                     </p>
                   </div>
                   <div class="mb-3">
@@ -329,8 +479,8 @@
                         <div class="col-md-6">
                           <div class="card border-0 shadow-sm h-100">
                             <div style="height: 150px; overflow: hidden; background: #f0f0f0;">
-                              <img src="../../assets/img/desain/<?= htmlspecialchars($img['image']) ?>" 
-                                   alt="<?= htmlspecialchars($img['label']) ?>" 
+                              <img src="../../assets/img/desain_custom/<?= htmlspecialchars($img['image']) ?>"
+                                   alt="<?= htmlspecialchars($img['label']) ?>"
                                    class="w-100 h-100 object-fit-cover">
                             </div>
                             <div class="card-body">
@@ -358,8 +508,8 @@
                         <?php foreach ($logos as $logo): ?>
                           <div class="col-4">
                             <div style="height: 100px; overflow: hidden; background: #f0f0f0; border-radius: 8px;">
-                              <img src="../../assets/img/desain/<?= htmlspecialchars($logo) ?>" 
-                                   alt="Logo" 
+                              <img src="../../assets/img/desain_custom/<?= htmlspecialchars($logo) ?>"
+                                   alt="Logo"
                                    class="w-100 h-100 object-fit-contain">
                             </div>
                           </div>
@@ -398,7 +548,6 @@
                     </div>
                     <div class="card-body">
                       <h6 class="card-title"><?= htmlspecialchars($pesanan['nama_desain']) ?></h6>
-                      <p class="text-muted small">Harga Desain: Rp <?= number_format($pesanan['harga_desain'] ?? 0) ?></p>
                     </div>
                   </div>
 
@@ -417,61 +566,248 @@
                 </h6>
 
                 <?php
-                  // Hitung total dengan memperhitungkan harga desain
-                  $harga_bahan_total = intval($pesanan['harga_bahan']) * intval($pesanan['jumlah_beli']);
-                  $harga_desain_total = (intval($pesanan['harga_desain'] ?? 0)) * intval($pesanan['jumlah_beli']);
-                  $total_harga_keseluruhan = hitung_total_harga_pesanan(
-                    $pesanan['harga_bahan'],
-                    $pesanan['harga_desain'] ?? 0,
-                    $pesanan['jumlah_beli']
-                  );
+                  $total_harga_keseluruhan = intval($pesanan['total_harga'] ?? $pesanan['harga'] ?? 0);
                   $bayar = $transaksi ? intval($transaksi['jumlah_bayar']) : 0;
                   $sisa_pembayaran = max(0, $total_harga_keseluruhan - $bayar);
+                  $statusHargaPembayaran = $pesanan['status_harga'] ?? 'Menunggu Harga';
+                  $labelStatusHargaPembayaran = $statusHargaPembayaran === 'Menunggu Harga' ? 'Pending' : $statusHargaPembayaran;
+                  if ($statusHargaPembayaran === 'Disetujui') {
+                    $statusPembayaranHarga = $transaksi['status_pembayaran'] ?? '';
+                    if (in_array($statusPembayaranHarga, ['DP', 'Lunas'], true)) {
+                      $labelStatusHargaPembayaran = 'Disetujui - ' . $statusPembayaranHarga;
+                    } elseif ($statusPembayaranHarga === 'Pending') {
+                      $labelStatusHargaPembayaran = 'Disetujui - Menunggu Validasi';
+                    } else {
+                      $labelStatusHargaPembayaran = 'Disetujui - Belum Bayar';
+                    }
+                  }
                 ?>
 
                 <div class="table-responsive">
                   <table class="table table-borderless">
                     <tr>
-                      <td class="text-muted">Harga Bahan</td>
-                      <td class="text-muted text-end small">Rp <?= number_format(intval($pesanan['harga_bahan'])) ?> × <?= intval($pesanan['jumlah_beli']) ?> pcs</td>
+                      <td class="text-muted">Status Harga</td>
+                      <td class="fw-bold text-end"><?= htmlspecialchars($labelStatusHargaPembayaran) ?></td>
                     </tr>
                     <tr>
-                      <td></td>
-                      <td class="fw-bold text-end">Rp <?= number_format($harga_bahan_total) ?></td>
-                    </tr>
-                    <?php if (!empty($pesanan['harga_desain'])): ?>
-                    <tr>
-                      <td class="text-muted">Harga Desain</td>
-                      <td class="text-muted text-end small">Rp <?= number_format(intval($pesanan['harga_desain'])) ?> × <?= intval($pesanan['jumlah_beli']) ?> pcs</td>
+                      <td class="text-muted">Status Pengerjaan</td>
+                      <td class="fw-bold text-end"><?= htmlspecialchars($pesanan['status_pengerjaan'] ?? 'Menunggu Pembayaran') ?></td>
                     </tr>
                     <tr>
-                      <td></td>
-                      <td class="fw-bold text-end">Rp <?= number_format($harga_desain_total) ?></td>
+                      <td class="text-muted">Tanggal Pesan</td>
+                      <td class="fw-bold text-end"><?= format_tanggal_pesanan($pesanan['tanggal_pesan'] ?? null) ?></td>
+                    </tr>
+                    <tr>
+                      <td class="text-muted">Tanggal Selesai</td>
+                      <td class="fw-bold text-end"><?= format_tanggal_pesanan($pesanan['tanggal_selesai'] ?? null) ?></td>
+                    </tr>
+                    <tr>
+                      <td class="text-muted fw-bold">Total Harga dari Admin</td>
+                      <td class="fw-bold text-end fs-5 text-success">
+                        <?= $total_harga_keseluruhan > 0 ? 'Rp ' . number_format($total_harga_keseluruhan) : 'Menunggu admin' ?>
+                      </td>
+                    </tr>
+                    <?php if (!empty($pesanan['catatan_harga'])): ?>
+                    <tr>
+                      <td class="text-muted">Catatan Admin</td>
+                      <td class="text-end"><?= nl2br(htmlspecialchars($pesanan['catatan_harga'])) ?></td>
                     </tr>
                     <?php endif; ?>
-                    <tr class="border-top pt-3">
-                      <td class="text-muted fw-bold">Total Harga</td>
-                      <td class="fw-bold text-end fs-5 text-success">Rp <?= number_format($total_harga_keseluruhan) ?></td>
-                    </tr>
+                    <?php if ($transaksi): ?>
                     <tr>
                       <td class="text-muted">Dibayarkan</td>
-                      <td class="fw-bold text-end">
-                        <?php if ($bayar > 0): ?>
-                          <span class="text-success">Rp <?= number_format($bayar) ?></span>
-                        <?php else: ?>
-                          <span class="text-muted">-</span>
-                        <?php endif; ?>
-                      </td>
+                      <td class="fw-bold text-end"><?= $bayar > 0 ? 'Rp ' . number_format($bayar) : '-' ?></td>
                     </tr>
                     <tr>
                       <td class="text-muted">Sisa Pembayaran</td>
-                      <td class="fw-bold text-end">
-                        Rp <?= number_format($sisa_pembayaran) ?>
-                      </td>
+                      <td class="fw-bold text-end">Rp <?= number_format($sisa_pembayaran) ?></td>
                     </tr>
+                    <?php endif; ?>
                   </table>
                 </div>
+                <?php if ($total_harga_keseluruhan <= 0): ?>
+                  <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Pesanan sedang menunggu admin memberikan harga.
+                  </div>
+                <?php endif; ?>
               </div>
+
+              <?php
+                $bisa_bayar = !$transaksi
+                  && $total_harga_keseluruhan > 0
+                  && in_array(($pesanan['status_harga'] ?? ''), ['Harga Diberikan', 'Disetujui'], true);
+                $minimal_dp = intdiv($total_harga_keseluruhan + 1, 2);
+                $bisa_pelunasan = $transaksi
+                  && ($transaksi['status_pembayaran'] ?? '') === 'DP'
+                  && $sisa_pembayaran > 0;
+              ?>
+              <?php if ($bisa_bayar): ?>
+              <div class="mb-5 p-4 rounded-4 bg-light">
+                <h6 class="fw-bold mb-3">
+                  <i class="bi bi-wallet2 me-2"></i>Form Pembayaran
+                </h6>
+
+                <form method="POST" enctype="multipart/form-data" id="formPembayaranAwal">
+                  <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                      <input type="radio" class="btn-check" name="jenis_pembayaran" id="bayarDp" value="dp" checked>
+                      <label class="btn btn-outline-warning text-start w-100 h-100 p-3" for="bayarDp">
+                        <span class="d-block fw-bold"><i class="bi bi-wallet2 me-2"></i>DP</span>
+                        <small class="d-block mt-1">Minimal Rp <?= number_format($minimal_dp) ?> atau setengah dari total harga.</small>
+                      </label>
+                    </div>
+                    <div class="col-md-6">
+                      <input type="radio" class="btn-check" name="jenis_pembayaran" id="bayarLunas" value="lunas">
+                      <label class="btn btn-outline-success text-start w-100 h-100 p-3" for="bayarLunas">
+                        <span class="d-block fw-bold"><i class="bi bi-check-circle me-2"></i>Lunas</span>
+                        <small class="d-block mt-1">Bayar penuh Rp <?= number_format($total_harga_keseluruhan) ?>.</small>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div id="nominalDpContainer" class="mb-3">
+                    <label for="nominalDp" class="form-label fw-semibold">Nominal DP</label>
+                    <div class="input-group">
+                      <span class="input-group-text">Rp</span>
+                      <input
+                        type="number"
+                        name="nominal_dp"
+                        id="nominalDp"
+                        class="form-control"
+                        min="<?= $minimal_dp ?>"
+                        max="<?= max($minimal_dp, $total_harga_keseluruhan - 1) ?>"
+                        value="<?= $minimal_dp ?>"
+                        required>
+                    </div>
+                    <div class="form-text">DP tidak boleh kurang dari setengah total harga.</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="metodePembayaran" class="form-label fw-semibold">Metode Pembayaran</label>
+                    <select id="metodePembayaran" name="metode_pembayaran" class="form-select" required>
+                      <option value="">-- Pilih Metode --</option>
+                      <option value="qris">QRIS</option>
+                      <option value="virtual_account">Virtual Account</option>
+                      <option value="transfer">Transfer Bank</option>
+                      <option value="cash">Pembayaran Langsung</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="buktiPembayaranAwal" class="form-label fw-semibold">Upload Bukti Pembayaran</label>
+                    <input
+                      type="file"
+                      name="bukti_pembayaran"
+                      id="buktiPembayaranAwal"
+                      accept="image/*"
+                      class="form-control">
+                    <div class="form-text">Bisa dikosongkan jika pembayaran dilakukan langsung.</div>
+                  </div>
+
+                  <div class="alert alert-light border mb-4">
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <div class="text-muted small">Total Harga</div>
+                        <div class="fw-bold">Rp <?= number_format($total_harga_keseluruhan) ?></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="text-muted small">Dibayar Sekarang</div>
+                        <div class="fw-bold text-success" id="bayarSekarangDisplay">Rp <?= number_format($minimal_dp) ?></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="text-muted small">Sisa</div>
+                        <div class="fw-bold" id="sisaPembayaranAwalDisplay">Rp <?= number_format($total_harga_keseluruhan - $minimal_dp) ?></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button type="submit" name="submit_pembayaran" class="btn btn-success rounded-pill w-100 py-3 fw-semibold">
+                    <i class="bi bi-send-check me-2"></i>Kirim Pembayaran
+                  </button>
+                </form>
+              </div>
+
+              <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                  const totalHarga = <?= intval($total_harga_keseluruhan) ?>;
+                  const minimalDp = <?= intval($minimal_dp) ?>;
+                  const jenisInputs = document.querySelectorAll('input[name="jenis_pembayaran"]');
+                  const nominalContainer = document.getElementById('nominalDpContainer');
+                  const nominalInput = document.getElementById('nominalDp');
+                  const bayarDisplay = document.getElementById('bayarSekarangDisplay');
+                  const sisaDisplay = document.getElementById('sisaPembayaranAwalDisplay');
+                  const formatRupiah = value => 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+
+                  function updateRingkasanPembayaran() {
+                    const jenis = document.querySelector('input[name="jenis_pembayaran"]:checked')?.value || 'dp';
+                    const isDp = jenis === 'dp';
+                    const bayar = isDp ? Math.max(minimalDp, parseInt(nominalInput.value, 10) || minimalDp) : totalHarga;
+
+                    nominalContainer.classList.toggle('d-none', !isDp);
+                    nominalInput.required = isDp;
+                    bayarDisplay.textContent = formatRupiah(bayar);
+                    sisaDisplay.textContent = formatRupiah(Math.max(0, totalHarga - bayar));
+                  }
+
+                  jenisInputs.forEach(input => input.addEventListener('change', updateRingkasanPembayaran));
+                  nominalInput.addEventListener('input', updateRingkasanPembayaran);
+                  updateRingkasanPembayaran();
+                });
+              </script>
+              <?php endif; ?>
+
+              <?php if ($bisa_pelunasan): ?>
+              <div class="mb-5 p-4 rounded-4 bg-light">
+                <h6 class="fw-bold mb-3">
+                  <i class="bi bi-check2-circle me-2"></i>Form Pelunasan DP
+                </h6>
+
+                <form method="POST" enctype="multipart/form-data" id="formPelunasanDp">
+                  <div class="alert alert-light border mb-4">
+                    <div class="row g-3">
+                      <div class="col-md-4">
+                        <div class="text-muted small">Total Harga</div>
+                        <div class="fw-bold">Rp <?= number_format($total_harga_keseluruhan) ?></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="text-muted small">DP Tervalidasi</div>
+                        <div class="fw-bold text-warning">Rp <?= number_format($bayar) ?></div>
+                      </div>
+                      <div class="col-md-4">
+                        <div class="text-muted small">Sisa Pelunasan</div>
+                        <div class="fw-bold text-success">Rp <?= number_format($sisa_pembayaran) ?></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="metodePelunasan" class="form-label fw-semibold">Metode Pelunasan</label>
+                    <select id="metodePelunasan" name="metode_pembayaran" class="form-select" required>
+                      <option value="">-- Pilih Metode --</option>
+                      <option value="qris">QRIS</option>
+                      <option value="virtual_account">Virtual Account</option>
+                      <option value="transfer">Transfer Bank</option>
+                      <option value="cash">Pembayaran Langsung</option>
+                    </select>
+                  </div>
+
+                  <div class="mb-4">
+                    <label for="buktiPelunasan" class="form-label fw-semibold">Upload Bukti Pelunasan</label>
+                    <input
+                      type="file"
+                      name="bukti_pembayaran"
+                      id="buktiPelunasan"
+                      accept="image/*"
+                      class="form-control">
+                    <div class="form-text">Bisa dikosongkan jika pelunasan dilakukan langsung.</div>
+                  </div>
+
+                  <button type="submit" name="submit_pelunasan_dp" class="btn btn-success rounded-pill w-100 py-3 fw-semibold">
+                    <i class="bi bi-send-check me-2"></i>Kirim Pelunasan untuk Validasi
+                  </button>
+                </form>
+              </div>
+              <?php endif; ?>
 
               <!-- INFO TRANSAKSI -->
               <?php if ($transaksi): ?>
@@ -637,16 +973,16 @@
                 </div>
                 <?php endif; ?>
 
-                <!-- UPLOAD BUKTI PEMBAYARAN - HANYA JIKA STATUS DP -->
-                <?php if ($transaksi && $transaksi['status_pembayaran'] === 'DP'): ?>
+                <!-- UPLOAD BUKTI PEMBAYARAN - SAAT MENUNGGU VALIDASI -->
+                <?php if ($transaksi && $transaksi['status_pembayaran'] === 'Pending'): ?>
                 <div class="mt-4 pt-4 border-top">
                   <div class="card border-warning rounded-3 shadow-sm">
                     <div class="card-body">
                       <h6 class="card-title fw-bold mb-3">
-                        <i class="bi bi-cloud-upload me-2 text-warning"></i>Upload Bukti Pembayaran
+                        <i class="bi bi-cloud-upload me-2 text-warning"></i>Perbarui Bukti Pembayaran
                       </h6>
                       <p class="text-muted small mb-3">
-                        Jika belum mengunggah bukti pembayaran atau ingin memperbarui bukti pembayaran Anda, silakan unggah file di bawah ini.
+                        Pembayaran sedang menunggu validasi admin. Jika bukti pembayaran kurang jelas, silakan unggah ulang file di bawah ini.
                       </p>
                       
                       <form method="POST" enctype="multipart/form-data" id="formUploadBukti">

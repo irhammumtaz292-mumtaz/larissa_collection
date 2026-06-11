@@ -241,7 +241,7 @@
                             </div>
 
                             <!-- Body -->
-                            <div class="card-body py-2" style="background-color: #DCDCDC;">
+                            <div class="card-body py-2">
                                 <div class="row g-2 small">
 
                                     <div class="col-12">
@@ -263,7 +263,7 @@
                             </div>
 
                             <!-- Footer -->
-                            <div class="card-footer border-0 pt-0 pb-2" style="background-color: #DCDCDC;">
+                            <div class="card-footer border-0 pt-0 pb-2">
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-primary w-100 rounded-pill"
                                         data-bs-toggle="modal" data-bs-target="#modalUbah<?= $akun['id_akun'];?>">

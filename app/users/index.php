@@ -77,9 +77,11 @@
                                     <div class="row g-4">
                                         <?php foreach ($produkChunk as $produk) : ?>
                                             <div class="col-md-4 col-sm-6">
-                                                <div class="card h-100">
+                                                <div class="card catalog-product-card h-100 shadow-sm">
                                                     <?php if (!empty($produk['gambar_produk'])) : ?>
-                                                        <img src="../../assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="card-img-top" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
+                                                        <div class="product-img-wrapper">
+                                                            <img src="../../assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="product-card-img" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
+                                                        </div>
                                                     <?php endif; ?>
                                                     <div class="card-body">
                                                         <h5 class="card-title"><?= htmlspecialchars($produk['nama_produk']) ?></h5>
@@ -110,9 +112,11 @@
                     <div class="row g-4">
                         <?php foreach ($data_produk as $produk) : ?>
                             <div class="col-md-4">
-                                <div class="card h-100">
+                                <div class="card catalog-product-card h-100 shadow-sm">
                                     <?php if (!empty($produk['gambar_produk'])) : ?>
-                                        <img src="../../assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="card-img-top" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
+                                        <div class="product-img-wrapper">
+                                            <img src="../../assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="product-card-img" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
+                                        </div>
                                     <?php endif; ?>
                                     <div class="card-body">
                                         <h5 class="card-title"><?= htmlspecialchars($produk['nama_produk']) ?></h5>

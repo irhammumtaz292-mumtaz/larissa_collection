@@ -58,20 +58,18 @@ INSERT INTO `akun` (`id_akun`, `id_customer`, `username`, `password`, `email`, `
 CREATE TABLE `bahan` (
   `id_bahan` int(11) NOT NULL,
   `jenis_bahan` varchar(50) NOT NULL,
-  `id_warna` int(11) NOT NULL,
-  `stok` int(11) NOT NULL,
-  `harga_bahan` int(11) NOT NULL
+  `id_warna` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `bahan`
 --
 
-INSERT INTO `bahan` (`id_bahan`, `jenis_bahan`, `id_warna`, `stok`, `harga_bahan`) VALUES
-(1, 'Polyester', 2, 6, 40000),
-(2, 'Wolls', 1, 3, 70000),
-(4, 'Katun', 1, 5, 80000),
-(8, 'Katun', 3, 5, 80000);
+INSERT INTO `bahan` (`id_bahan`, `jenis_bahan`, `id_warna`) VALUES
+(1, 'Polyester', 2),
+(2, 'Wolls', 1),
+(4, 'Katun', 1),
+(8, 'Katun', 3);
 
 -- --------------------------------------------------------
 
@@ -109,7 +107,6 @@ CREATE TABLE `desain` (
   `id_produk` int(11) NOT NULL,
   `nama_desain` varchar(50) NOT NULL,
   `gambar_desain` varchar(255) NOT NULL,
-  `harga_desain` int(11) NOT NULL,
   `deskripsi` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -117,10 +114,10 @@ CREATE TABLE `desain` (
 -- Dumping data for table `desain`
 --
 
-INSERT INTO `desain` (`id_desain`, `id_produk`, `nama_desain`, `gambar_desain`, `harga_desain`, `deskripsi`) VALUES
-(1, 1, 'Keren', '6a145b26126cb.png', 12000, 'Keren Coy'),
-(2, 2, 'Bagus', '6a145eab62fd4.png', 70000, 'Keren'),
-(3, 3, 'Keren', '6a150c6195a71.jpeg', 70000, 'Seksi');
+INSERT INTO `desain` (`id_desain`, `id_produk`, `nama_desain`, `gambar_desain`, `deskripsi`) VALUES
+(1, 1, 'Keren', '6a145b26126cb.png', 'Keren Coy'),
+(2, 2, 'Bagus', '6a145eab62fd4.png', 'Keren'),
+(3, 3, 'Keren', '6a150c6195a71.jpeg', 'Seksi');
 
 -- --------------------------------------------------------
 
@@ -162,18 +159,24 @@ CREATE TABLE `pesanan` (
   `jumlah_beli` int(11) NOT NULL,
   `ukuran` varchar(50) NOT NULL,
   `harga` int(11) NOT NULL,
-  `harga_dp` int(11) DEFAULT NULL
+  `harga_dp` int(11) DEFAULT NULL,
+  `total_harga` int(11) DEFAULT NULL,
+  `catatan_harga` text DEFAULT NULL,
+  `status_harga` enum('Menunggu Harga','Harga Diberikan','Disetujui','Ditolak') DEFAULT 'Menunggu Harga',
+  `status_pengerjaan` enum('Menunggu Pembayaran','Menunggu Diproses','Sedang Diproses','Selesai','Dibatalkan') DEFAULT 'Menunggu Pembayaran',
+  `tanggal_pesan` datetime NOT NULL DEFAULT current_timestamp(),
+  `tanggal_selesai` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `pesanan`
 --
 
-INSERT INTO `pesanan` (`id_pesanan`, `id_customer`, `id_produk`, `id_bahan`, `id_desain`, `id_desain_custom`, `jumlah_beli`, `ukuran`, `harga`, `harga_dp`) VALUES
-(19, 17, 2, 4, 2, NULL, 1, '{\"S\":0,\"M\":0,\"L\":0,\"XL\":1,\"XXL\":0,\"XXXL\":0}', 150000, 150000),
-(20, 20, 1, 8, 1, NULL, 1, '{\"S\":0,\"M\":0,\"L\":0,\"XL\":0,\"XXL\":1,\"XXXL\":0}', 92000, 92000),
-(21, 20, 1, 1, NULL, 2, 20, '{\"S\":0,\"M\":20,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 800000, 450000),
-(22, 17, 2, 8, 2, NULL, 20, '{\"S\":0,\"M\":20,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 3000000, 1499993);
+INSERT INTO `pesanan` (`id_pesanan`, `id_customer`, `id_produk`, `id_bahan`, `id_desain`, `id_desain_custom`, `jumlah_beli`, `ukuran`, `harga`, `harga_dp`, `total_harga`, `catatan_harga`, `status_harga`, `status_pengerjaan`, `tanggal_pesan`, `tanggal_selesai`) VALUES
+(19, 17, 2, 4, 2, NULL, 1, '{\"S\":0,\"M\":0,\"L\":0,\"XL\":1,\"XXL\":0,\"XXXL\":0}', 150000, 150000, 150000, NULL, 'Harga Diberikan', 'Menunggu Diproses', '2026-06-11 00:00:00', NULL),
+(20, 20, 1, 8, 1, NULL, 1, '{\"S\":0,\"M\":0,\"L\":0,\"XL\":0,\"XXL\":1,\"XXXL\":0}', 92000, 92000, 92000, NULL, 'Harga Diberikan', 'Menunggu Diproses', '2026-06-11 00:00:00', NULL),
+(21, 20, 1, 1, NULL, 2, 20, '{\"S\":0,\"M\":20,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 800000, 450000, 800000, NULL, 'Harga Diberikan', 'Menunggu Diproses', '2026-06-11 00:00:00', NULL),
+(22, 17, 2, 8, 2, NULL, 20, '{\"S\":0,\"M\":20,\"L\":0,\"XL\":0,\"XXL\":0,\"XXXL\":0}', 3000000, 1499993, 3000000, NULL, 'Harga Diberikan', 'Menunggu Diproses', '2026-06-11 00:00:00', NULL);
 
 -- --------------------------------------------------------
 

@@ -14,7 +14,7 @@
         $kata_cari = htmlspecialchars(strip_tags($_POST['kata_cari']));
         $data_desain = select("SELECT desain.*, produk.nama_produk FROM desain
             JOIN produk ON desain.id_produk = produk.id_produk
-            WHERE CONCAT(nama_desain, nama_produk, deskripsi, harga_desain) LIKE '%$kata_cari%'
+            WHERE CONCAT(nama_desain, nama_produk, deskripsi) LIKE '%$kata_cari%'
             ORDER BY nama_desain ASC");
     } else {
         $data_desain = select("SELECT desain.*, produk.nama_produk FROM desain
@@ -111,7 +111,6 @@
                                                 <th class="bg-success">#</th>
                                                 <th class="bg-success">Nama Desain</th>
                                                 <th class="bg-success">Produk</th>
-                                                <th class="bg-success">Harga</th>
                                                 <th class="bg-success">Gambar</th>
                                                 <th class="bg-success">Deskripsi</th>
                                                 <th class="bg-success">Action</th>
@@ -124,7 +123,6 @@
                                                     <td class="text-center"><?= $no++; ?></td>
                                                     <td><?= htmlspecialchars($desain['nama_desain']) ?></td>
                                                     <td><?= htmlspecialchars($desain['nama_produk']) ?></td>
-                                                    <td><?= htmlspecialchars($desain['harga_desain']) ?></td>
                                                     <td class="text-center">
                                                         <?php if (!empty($desain['gambar_desain'])) : ?>
                                                             <img src="../../assets/img/desain/<?= htmlspecialchars($desain['gambar_desain']) ?>" alt="<?= htmlspecialchars($desain['nama_desain']) ?>" width="60" height="60">
@@ -194,7 +192,6 @@
                                         <h6 class="mb-0 fw-semibold text-truncate"><?= htmlspecialchars($desain['nama_desain']) ?></h6>
                                         <small class="text-muted text-truncate d-block"><?= htmlspecialchars($desain['nama_produk']) ?></small>
                                     </div>
-                                    <span class="badge rounded-pill px-3 py-2 bg-success">Rp <?= htmlspecialchars($desain['harga_desain']) ?></span>
                                 </div>
                                 <div class="card-body py-2 bg-light">
                                     <?php if (!empty($desain['gambar_desain'])) : ?>
@@ -250,10 +247,6 @@
                                     </select>
                                 </div>
                                 <div class="form-floating mb-2">
-                                    <input type="number" name="harga_desain" id="floatingInput" class="form-control" placeholder="Harga Desain" required>
-                                    <label for="floatingInput">Harga Desain</label>
-                                </div>
-                                <div class="form-floating mb-2">
                                     <textarea name="deskripsi" id="floatingInput" class="form-control" rows="3" placeholder="Deskripsi" required></textarea>
                                     <label for="floatingInput">Deskripsi</label>
                                 </div>
@@ -294,10 +287,6 @@
                                                 <option value="<?= $produk['id_produk'] ?>" <?= ($desain['id_produk'] == $produk['id_produk']) ? 'selected' : '' ?>><?= htmlspecialchars($produk['nama_produk']) ?></option>
                                             <?php endforeach; ?>
                                         </select>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input type="number" name="harga_desain" id="floatingInput" class="form-control" placeholder="Harga Desain" value="<?= htmlspecialchars($desain['harga_desain']) ?>" required>
-                                        <label for="floatingInput">Harga Desain</label>
                                     </div>
                                     <div class="form-floating mb-3">
                                         <textarea name="deskripsi" id="floatingInput" class="form-control" rows="3" placeholder="Deskripsi" required><?= htmlspecialchars($desain['deskripsi']) ?></textarea>

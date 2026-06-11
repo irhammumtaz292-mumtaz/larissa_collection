@@ -164,7 +164,7 @@
                                         <div class="row g-4">
                                             <?php foreach ($produkSlide as $produk) : ?>
                                                 <div class="col-lg-4 col-sm-6">
-                                                    <div class="card h-100 shadow-sm">
+                                                    <div class="card catalog-product-card h-100 shadow-sm">
                                                         <?php if (!empty($produk['gambar_produk'])) : ?>
                                                             <div class="product-img-wrapper">
                                                                 <img src="assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="product-card-img" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">
@@ -198,7 +198,7 @@
                     <?php else : ?>
                         <?php foreach ($data_produk as $produk) : ?>
                             <div class="col-lg-4 col-sm-6 mb-4">
-                                <div class="card h-100 shadow-sm">
+                                <div class="card catalog-product-card h-100 shadow-sm">
                                     <?php if (!empty($produk['gambar_produk'])) : ?>
                                         <div class="product-img-wrapper">
                                             <img src="assets/img/produk/<?= htmlspecialchars($produk['gambar_produk']) ?>" class="product-card-img" alt="<?= htmlspecialchars($produk['nama_produk']) ?>">

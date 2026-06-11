@@ -10,5 +10,5 @@ session_unset();
 session_destroy();
 
 // redirect ke login
-header("Location: login.php");
+header("Location: ./");
 exit;

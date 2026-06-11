@@ -9,31 +9,179 @@
         exit;
     }
 
+    $adminAkunAlert = $_SESSION['admin_akun_flash'] ?? null;
+    unset($_SESSION['admin_akun_flash']);
+
+    $adminAkunData = [
+        'id_akun' => $_SESSION['id_akun'] ?? '',
+        'nama' => $_SESSION['nama'] ?? '',
+        'username' => $_SESSION['username'] ?? '',
+        'email' => $_SESSION['email'] ?? '',
+        'no_hp' => $_SESSION['no_hp'] ?? '',
+        'alamat' => $_SESSION['alamat'] ?? '',
+    ];
+
+    $idAkunLogin = intval($_SESSION['id_akun'] ?? 0);
+
+    if ($idAkunLogin > 0 && isset($_POST['simpan_kelola_akun_admin'])) {
+        $nama = trim(strip_tags($_POST['nama'] ?? ''));
+        $username = trim(strip_tags($_POST['username'] ?? ''));
+        $email = trim(strip_tags($_POST['email'] ?? ''));
+        $noHp = trim(strip_tags($_POST['no_hp'] ?? ''));
+        $alamat = trim(strip_tags($_POST['alamat'] ?? ''));
+        $password = $_POST['password'] ?? '';
+        $konfirmasiPassword = $_POST['konfirmasi_password'] ?? '';
+
+        $flash = [
+            'type' => 'danger',
+            'message' => 'Data akun gagal diperbarui.',
+        ];
+
+        if ($nama === '' || $username === '' || $email === '' || $noHp === '' || $alamat === '') {
+            $flash['message'] = 'Semua data akun wajib diisi.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $flash['message'] = 'Format email tidak valid.';
+        } elseif ($password !== '' && strlen($password) < 5) {
+            $flash['message'] = 'Password baru minimal 5 karakter.';
+        } elseif ($password !== '' && $password !== $konfirmasiPassword) {
+            $flash['message'] = 'Konfirmasi password tidak sama.';
+        } else {
+            $duplikat = false;
+            $stmtCek = mysqli_prepare($db, "SELECT id_akun FROM akun WHERE (username = ? OR email = ?) AND id_akun <> ? LIMIT 1");
+
+            if ($stmtCek) {
+                mysqli_stmt_bind_param($stmtCek, 'ssi', $username, $email, $idAkunLogin);
+                mysqli_stmt_execute($stmtCek);
+                mysqli_stmt_store_result($stmtCek);
+                $duplikat = mysqli_stmt_num_rows($stmtCek) > 0;
+                mysqli_stmt_close($stmtCek);
+            }
+
+            if ($duplikat) {
+                $flash['message'] = 'Username atau email sudah digunakan akun lain.';
+            } else {
+                mysqli_begin_transaction($db);
+
+                $stmtCustomer = mysqli_prepare(
+                    $db,
+                    "UPDATE customer c
+                    JOIN akun a ON a.id_customer = c.id_customer
+                    SET c.nama = ?, c.no_hp = ?, c.alamat = ?
+                    WHERE a.id_akun = ? AND a.role = 'Admin'"
+                );
+
+                if ($stmtCustomer) {
+                    mysqli_stmt_bind_param($stmtCustomer, 'sssi', $nama, $noHp, $alamat, $idAkunLogin);
+                    $updateCustomer = mysqli_stmt_execute($stmtCustomer);
+                    mysqli_stmt_close($stmtCustomer);
+                } else {
+                    $updateCustomer = false;
+                }
+
+                if ($password !== '') {
+                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                    $stmtAkun = mysqli_prepare($db, "UPDATE akun SET username = ?, email = ?, password = ? WHERE id_akun = ? AND role = 'Admin'");
+
+                    if ($stmtAkun) {
+                        mysqli_stmt_bind_param($stmtAkun, 'sssi', $username, $email, $passwordHash, $idAkunLogin);
+                    }
+                } else {
+                    $stmtAkun = mysqli_prepare($db, "UPDATE akun SET username = ?, email = ? WHERE id_akun = ? AND role = 'Admin'");
+
+                    if ($stmtAkun) {
+                        mysqli_stmt_bind_param($stmtAkun, 'ssi', $username, $email, $idAkunLogin);
+                    }
+                }
+
+                if ($stmtAkun) {
+                    $updateAkun = mysqli_stmt_execute($stmtAkun);
+                    mysqli_stmt_close($stmtAkun);
+                } else {
+                    $updateAkun = false;
+                }
+
+                if ($updateCustomer && $updateAkun) {
+                    mysqli_commit($db);
+
+                    $_SESSION['nama'] = $nama;
+                    $_SESSION['username'] = $username;
+                    $_SESSION['email'] = $email;
+                    $_SESSION['no_hp'] = $noHp;
+                    $_SESSION['alamat'] = $alamat;
+
+                    $flash = [
+                        'type' => 'success',
+                        'message' => 'Data akun berhasil diperbarui.',
+                    ];
+                } else {
+                    mysqli_rollback($db);
+                }
+            }
+        }
+
+        $_SESSION['admin_akun_flash'] = $flash;
+        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? './'));
+        exit;
+    }
+
+    if ($idAkunLogin > 0) {
+        $stmtAkunLogin = mysqli_prepare(
+            $db,
+            "SELECT a.id_akun, c.nama, a.username, a.email, c.no_hp, c.alamat
+            FROM akun a
+            JOIN customer c ON a.id_customer = c.id_customer
+            WHERE a.id_akun = ? AND a.role = 'Admin'
+            LIMIT 1"
+        );
+
+        if ($stmtAkunLogin) {
+            mysqli_stmt_bind_param($stmtAkunLogin, 'i', $idAkunLogin);
+            mysqli_stmt_execute($stmtAkunLogin);
+            mysqli_stmt_bind_result($stmtAkunLogin, $dbIdAkun, $dbNama, $dbUsername, $dbEmail, $dbNoHp, $dbAlamat);
+
+            if (mysqli_stmt_fetch($stmtAkunLogin)) {
+                $adminAkunData = [
+                    'id_akun' => $dbIdAkun,
+                    'nama' => $dbNama,
+                    'username' => $dbUsername,
+                    'email' => $dbEmail,
+                    'no_hp' => $dbNoHp,
+                    'alamat' => $dbAlamat,
+                ];
+            }
+
+            mysqli_stmt_close($stmtAkunLogin);
+        }
+    }
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Admin Dashboard</title>
+        <title><?= htmlspecialchars($laman ?? 'Admin Dashboard') ?> - Admin Larisa Collection</title>
+        <link rel="icon" type="image/x-icon" href="../../assets/favicon.ico">
+        <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700" rel="stylesheet" type="text/css">
         <link href="../../assets/css/bootstrap.min.css" rel="stylesheet">
         <link href="../../assets/css/bootstrap-icons.min.css" rel="stylesheet">
+        <link href="../../assets/css/admin.css" rel="stylesheet">
     </head>
 
-    <body>
+    <body class="admin-shell">
 
         <div class="d-flex vh-100 overflow-hidden">
 
             <!-- Sidebar -->
             <div id="sidebar" class="collapse collapse-horizontal show">
 
-                <aside class="d-flex flex-column flex-shrink-0 bg-dark text-white h-100 p-3 overflow-auto"
-                       style="width: 220px; min-width:220px;">
+                <aside class="admin-sidebar d-flex flex-column flex-shrink-0 text-white h-100 p-3 overflow-auto">
 
-                <a href="#" class="d-flex align-items-center mb-3 text-white text-decoration-none">
-                    <i class="bi bi-speedometer2 fs-4 me-2"></i>
-                    <span class="fs-4">Admin</span>
+                <a href="./" class="admin-sidebar-brand d-flex align-items-center mb-3 text-decoration-none">
+                    <i class="bi bi-stars fs-4 me-2"></i>
+                    <span class="fs-5">Larisa Admin</span>
                 </a>
 
                 <hr>
@@ -106,8 +254,8 @@
                         </li>
 
                         <li class="nav-item">
-                            <a href="#"
-                            class="nav-link text-white">
+                            <a href="admin_laporan.php"
+                            class="nav-link <?= ($laman == 'Laporan') ? 'active' : '' ?> text-white">
                                 <i class="bi bi-file-earmark-text me-2"></i>Laporan
                             </a>
                         </li>
@@ -118,21 +266,27 @@
                 <hr>
 
                 <div>
-                    <button class="btn btn-dark w-100 text-start d-flex align-items-center justify-content-between" type="button"
+                    <button class="admin-user-button btn w-100 text-start d-flex align-items-center justify-content-between" type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#userMenuCollapse"
                         aria-expanded="false"
                         aria-controls="userMenuCollapse">
                         <span class="d-flex align-items-center">
                             <img src="https://placehold.co/32x32" alt="User" class="rounded-circle me-2">
-                            <strong><?= $_SESSION['username'] ?></strong>
+                            <strong><?= htmlspecialchars($adminAkunData['username'] ?? 'Admin') ?></strong>
                         </span>
                         <i class="bi bi-chevron-down"></i>
                     </button>
                     <div class="collapse mt-2" id="userMenuCollapse">
                         <ul class="list-unstyled mb-0">
-                            <li><a class="btn btn-outline-light w-100 text-start mb-1" href="#">Profile</a></li>
-                            <li><a class="btn btn-outline-light w-100 text-start" href="../../logout.php">Sign out</a></li>
+                            <li>
+                                <button type="button" class="admin-user-action btn w-100 text-start mb-1"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalKelolaAkunAdmin">
+                                    <i class="bi bi-person-gear me-2"></i>Kelola Data Akun
+                                </button>
+                            </li>
+                            <li><a class="admin-user-action btn w-100 text-start" href="../../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign out</a></li>
                         </ul>
                     </div>
                 </div>
@@ -142,15 +296,15 @@
             </div>
 
             <!-- Main Content -->
-            <div class="flex-grow-1 d-flex flex-column p-2 p-md-3" style="min-width:0;">
+            <div class="admin-main flex-grow-1 d-flex flex-column p-2 p-md-3">
 
             <!-- Navbar -->
             <header>
-                <nav class="navbar navbar-expand-lg navbar-light bg-light rounded mb-3 mb-md-4 shadow-sm px-2 px-md-3 position-sticky top-0 z-3" aria-label="Top Navigation">
+                <nav class="admin-topbar navbar navbar-expand-lg rounded mb-3 mb-md-4 px-2 px-md-3 position-sticky top-0 z-3" aria-label="Top Navigation">
                     <div class="container-fluid p-0">
 
                         <!-- Toggle Button -->
-                        <button class="btn btn-outline-secondary me-2"
+                        <button class="btn me-2"
                             data-bs-toggle="collapse"
                             data-bs-target="#sidebar">
                             <i class="bi bi-list"></i>
@@ -159,7 +313,7 @@
                         <span class="navbar-brand mb-0 fw-semibold" href="#"><?= $laman; ?></span>
                        
                          <div class="ms-auto d-flex align-items-center gap-3">
-                            <a href="#" class="position-relative text-dark">
+                            <a href="#" class="position-relative">
                                 <i class="bi bi-bell fs-5"></i>
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
                             </a>
@@ -169,3 +323,75 @@
                     </div>
                 </nav>
             </header>
+
+            <?php if (!empty($adminAkunAlert)) : ?>
+                <div class="alert alert-<?= htmlspecialchars($adminAkunAlert['type']) ?> alert-dismissible fade show" role="alert">
+                    <i class="bi bi-info-circle me-2"></i><?= htmlspecialchars($adminAkunAlert['message']) ?>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            <?php endif; ?>
+
+            <div class="modal fade" id="modalKelolaAkunAdmin" tabindex="-1" aria-labelledby="modalKelolaAkunAdminLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <form action="" method="post">
+                            <input type="hidden" name="simpan_kelola_akun_admin" value="1">
+
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="modalKelolaAkunAdminLabel">
+                                    <i class="bi bi-person-gear me-2"></i>Kelola Data Akun
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+
+                            <div class="modal-body overflow-auto" style="max-height: calc(100vh - 210px);">
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="nama" id="adminNama" class="form-control" minlength="3" placeholder="Nama" value="<?= htmlspecialchars($adminAkunData['nama'] ?? '') ?>" required>
+                                    <label for="adminNama">Nama</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="username" id="adminUsername" class="form-control" minlength="3" placeholder="Username" value="<?= htmlspecialchars($adminAkunData['username'] ?? '') ?>" required>
+                                    <label for="adminUsername">Username</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="email" name="email" id="adminEmail" class="form-control" placeholder="Email" value="<?= htmlspecialchars($adminAkunData['email'] ?? '') ?>" required>
+                                    <label for="adminEmail">Email</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <input type="text" name="no_hp" id="adminNoHp" class="form-control" minlength="8" placeholder="Nomor Handphone" value="<?= htmlspecialchars($adminAkunData['no_hp'] ?? '') ?>" required>
+                                    <label for="adminNoHp">Nomor Handphone</label>
+                                </div>
+
+                                <div class="form-floating mb-3">
+                                    <textarea name="alamat" id="adminAlamat" class="form-control" minlength="5" placeholder="Alamat" style="height: 100px;" required><?= htmlspecialchars($adminAkunData['alamat'] ?? '') ?></textarea>
+                                    <label for="adminAlamat">Alamat</label>
+                                </div>
+
+                                <hr>
+
+                                <div class="form-floating mb-3">
+                                    <input type="password" name="password" id="adminPassword" class="form-control" minlength="5" placeholder="Password Baru">
+                                    <label for="adminPassword">Password Baru</label>
+                                </div>
+
+                                <div class="form-floating mb-1">
+                                    <input type="password" name="konfirmasi_password" id="adminKonfirmasiPassword" class="form-control" minlength="5" placeholder="Konfirmasi Password">
+                                    <label for="adminKonfirmasiPassword">Konfirmasi Password</label>
+                                </div>
+
+                                <small class="text-muted">Kosongkan password jika tidak ingin mengganti password.</small>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-floppy me-1"></i>Simpan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
