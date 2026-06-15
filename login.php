@@ -2,7 +2,14 @@
 
 session_start();
 
-include 'config/db/db.php';
+require_once 'config/db/db.php';
+require_once 'config/controller/controller.php';
+
+$resetAlert = null;
+
+if (isset($_POST['lupa_sandi'])) {
+    $resetAlert = lupa_sandi_akun($_POST);
+}
 
 if (isset($_POST['login'])) {
 
@@ -113,6 +120,13 @@ if (isset($_POST['login'])) {
                         </div>
                     <?php endif; ?>
 
+                    <?php if (!empty($resetAlert)) : ?>
+                        <div class="alert alert-<?= htmlspecialchars($resetAlert['type']) ?> rounded-4 py-2 mb-3">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <?= htmlspecialchars($resetAlert['message']) ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="form-floating mb-3">
                         <input
                             type="email"
@@ -160,6 +174,14 @@ if (isset($_POST['login'])) {
                             class="btn btn-warning py-2 fw-semibold btn-login rounded-4">
                             Login
                         </button>
+
+                        <button
+                            type="button"
+                            class="btn btn-link link-warning text-decoration-none fw-semibold mt-2"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalLupaSandi">
+                            Lupa sandi?
+                        </button>
                     </div>
 
                     <div class="text-center mt-4">
@@ -189,6 +211,47 @@ if (isset($_POST['login'])) {
     </section>
 
 </main>
+
+<div class="modal fade" id="modalLupaSandi" tabindex="-1" aria-labelledby="modalLupaSandiLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-warning rounded-4">
+            <form action="" method="POST">
+                <div class="modal-header border-warning">
+                    <h2 class="modal-title h5 fw-bold" id="modalLupaSandiLabel">
+                        Lupa Sandi
+                    </h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="form-floating">
+                        <input
+                            type="email"
+                            class="form-control"
+                            id="reset_email"
+                            name="reset_email"
+                            placeholder="Email"
+                            value="<?= isset($_POST['reset_email']) ? htmlspecialchars($_POST['reset_email']) : ''; ?>"
+                            required>
+
+                        <label for="reset_email">
+                            <i class="bi bi-envelope me-2"></i>Email akun
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-warning">
+                    <button type="button" class="btn btn-outline-light rounded-4" data-bs-dismiss="modal">
+                        Batal
+                    </button>
+                    <button type="submit" name="lupa_sandi" class="btn btn-warning fw-semibold rounded-4">
+                        Kirim Link Reset
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <script src="assets/js/login.js"></script>
 

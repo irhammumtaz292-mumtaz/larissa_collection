@@ -154,6 +154,12 @@
         }
     }
 
+    $notifikasiPesananCount = 0;
+    $notifikasiPesanan = select("SELECT COUNT(*) AS total FROM pesanan WHERE status_pengerjaan <> 'Selesai'");
+    if (!empty($notifikasiPesanan[0]['total'])) {
+        $notifikasiPesananCount = (int) $notifikasiPesanan[0]['total'];
+    }
+
 ?>
 
 <!DOCTYPE html>
@@ -163,8 +169,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title><?= htmlspecialchars($laman ?? 'Admin Dashboard') ?> - Admin Larisa Collection</title>
         <link rel="icon" type="image/x-icon" href="../../assets/favicon.ico">
-        <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" type="text/css">
         <link href="../../assets/css/bootstrap.min.css" rel="stylesheet">
         <link href="../../assets/css/bootstrap-icons.min.css" rel="stylesheet">
         <link href="../../assets/css/admin.css" rel="stylesheet">
@@ -179,12 +184,17 @@
 
                 <aside class="admin-sidebar d-flex flex-column flex-shrink-0 text-white h-100 p-3 overflow-auto">
 
-                <a href="./" class="admin-sidebar-brand d-flex align-items-center mb-3 text-decoration-none">
-                    <i class="bi bi-stars fs-4 me-2"></i>
-                    <span class="fs-5">Larisa Admin</span>
+                <a href="./" class="admin-sidebar-brand d-flex align-items-center mb-4 text-decoration-none">
+                    <span class="admin-sidebar-brand-icon d-inline-flex align-items-center justify-content-center me-3">
+                        <i class="bi bi-stars"></i>
+                    </span>
+                    <span>
+                        <span class="admin-sidebar-brand-title d-block">Larisa Admin</span>
+                        <small class="admin-sidebar-brand-subtitle d-block">Kelola toko dengan rapi</small>
+                    </span>
                 </a>
 
-                <hr>
+                <hr class="admin-sidebar-divider">
 
                 <nav aria-label="Sidebar Navigation">
                     <ul class="nav nav-pills flex-column mb-auto">
@@ -209,7 +219,7 @@
                                 <i class="bi bi-chevron-down small"></i>
                             </button>
 
-                            <div class="collapse" id="produkCollapse">
+                            <div class="collapse <?= ($laman == 'Katalog' || $laman == 'Produk' || $laman == 'Warna' || $laman == 'Bahan' || $laman == 'Desain') ? 'show' : '' ?>" id="produkCollapse">
                                 <ul class="nav flex-column mb-0">
                                     <li class="nav-item">
                                         <a href="admin_produk.php"
@@ -263,17 +273,22 @@
                     </ul>
                 </nav>
 
-                <hr>
+                <hr class="admin-sidebar-divider mt-4">
 
-                <div>
+                <div class="admin-user-panel mt-auto">
                     <button class="admin-user-button btn w-100 text-start d-flex align-items-center justify-content-between" type="button"
                         data-bs-toggle="collapse"
                         data-bs-target="#userMenuCollapse"
                         aria-expanded="false"
                         aria-controls="userMenuCollapse">
                         <span class="d-flex align-items-center">
-                            <img src="https://placehold.co/32x32" alt="User" class="rounded-circle me-2">
-                            <strong><?= htmlspecialchars($adminAkunData['username'] ?? 'Admin') ?></strong>
+                            <span class="admin-user-avatar d-inline-flex align-items-center justify-content-center rounded-circle me-3">
+                                <i class="bi bi-person"></i>
+                            </span>
+                            <span>
+                                <strong class="d-block"><?= htmlspecialchars($adminAkunData['username'] ?? 'Admin') ?></strong>
+                                <small class="admin-user-role">Administrator</small>
+                            </span>
                         </span>
                         <i class="bi bi-chevron-down"></i>
                     </button>
@@ -300,7 +315,7 @@
 
             <!-- Navbar -->
             <header>
-                <nav class="admin-topbar navbar navbar-expand-lg rounded mb-3 mb-md-4 px-2 px-md-3 position-sticky top-0 z-3" aria-label="Top Navigation">
+                <nav class="admin-topbar navbar navbar-expand-lg rounded-4 mb-3 mb-md-4 px-2 px-md-3 position-sticky top-0 z-3" aria-label="Top Navigation">
                     <div class="container-fluid p-0">
 
                         <!-- Toggle Button -->
@@ -313,9 +328,13 @@
                         <span class="navbar-brand mb-0 fw-semibold" href="#"><?= $laman; ?></span>
                        
                          <div class="ms-auto d-flex align-items-center gap-3">
-                            <a href="#" class="position-relative">
+                            <a href="admin_pesanan.php#pesananTable" class="position-relative" aria-label="Lihat pesanan yang belum selesai">
                                 <i class="bi bi-bell fs-5"></i>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
+                                <?php if ($notifikasiPesananCount > 0) : ?>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        <?= $notifikasiPesananCount ?>
+                                    </span>
+                                <?php endif; ?>
                             </a>
                             <!-- <a href="#" class="text-dark"><i class="bi bi-envelope fs-5"></i></a>
                             <a href="#" class="text-dark"><i class="bi bi-gear fs-5"></i></a> -->

@@ -26,6 +26,7 @@
     $total_pengguna = select("SELECT COUNT(*) AS total FROM akun")[0]['total'] ?? 0;
     $total_produk = select("SELECT COUNT(*) AS total FROM produk")[0]['total'] ?? 0;
     $total_pesanan = select("SELECT COUNT(*) AS total FROM pesanan")[0]['total'] ?? 0;
+    $pesanan_selesai = select("SELECT COUNT(*) AS total FROM pesanan WHERE status_pengerjaan = 'Selesai'")[0]['total'] ?? 0;
     $pesanan_menunggu = select("SELECT COUNT(*) AS total FROM pesanan WHERE status_pengerjaan <> 'Selesai'")[0]['total'] ?? 0;
     $pesanan_terbaru = select("
         SELECT
@@ -48,9 +49,9 @@
 
     <!-- Dashboard Main -->
     <main class="overflow-auto" style="flex:1;">
-        <section class="row g-3 mb-4" aria-label="Ringkasan Dashboard">
-            <article class="col-md-3">
-            <div class="card text-bg-primary mb-3">
+        <section class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 row-cols-xxl-5 g-3 mb-4" aria-label="Ringkasan Dashboard">
+            <article class="col">
+            <div class="card text-bg-primary admin-summary-card h-100">
                 <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
                     <h6 class="card-subtitle mb-2">Pengguna</h6>
@@ -60,8 +61,8 @@
                 </div>
             </div>
             </article>
-            <article class="col-md-3">
-            <div class="card text-bg-success mb-3">
+            <article class="col">
+            <div class="card text-bg-success admin-summary-card h-100">
                 <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
                     <h6 class="card-subtitle mb-2">Produk</h6>
@@ -71,8 +72,8 @@
                 </div>
             </div>
             </article>
-            <article class="col-md-3">
-            <div class="card text-bg-warning mb-3">
+            <article class="col">
+            <div class="card text-bg-warning admin-summary-card h-100">
                 <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
                     <h6 class="card-subtitle mb-2">Pesanan</h6>
@@ -82,14 +83,25 @@
                 </div>
             </div>
             </article>
-            <article class="col-md-3">
-            <div class="card text-bg-danger mb-3">
+            <article class="col">
+            <div class="card text-bg-danger admin-summary-card h-100">
                 <div class="card-body d-flex align-items-center justify-content-between">
                 <div>
                     <h6 class="card-subtitle mb-2">Belum Selesai</h6>
                     <h4 class="card-title"><?= number_format((int) $pesanan_menunggu) ?></h4>
                 </div>
                 <i class="bi bi-hourglass-split fs-2 text-warning"></i>
+                </div>
+            </div>
+            </article>
+            <article class="col">
+            <div class="card text-bg-success admin-summary-card h-100">
+                <div class="card-body d-flex align-items-center justify-content-between">
+                <div>
+                    <h6 class="card-subtitle mb-2">Selesai Dibuat</h6>
+                    <h4 class="card-title"><?= number_format((int) $pesanan_selesai) ?></h4>
+                </div>
+                <i class="bi bi-check2-circle fs-2 text-warning"></i>
                 </div>
             </div>
             </article>

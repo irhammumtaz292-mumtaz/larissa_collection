@@ -10909,7 +10909,9 @@ p {
 #mainNav {
   padding-top: 1rem;
   padding-bottom: 1rem;
-  background-color: #212529;
+  background-color: rgba(31, 41, 55, 0.86);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 }
 #mainNav .navbar-toggler {
   padding: 0.75rem;
@@ -10919,10 +10921,10 @@ p {
   font-weight: 700;
 }
 #mainNav .navbar-brand {
-  color: #ffc800;
+  color: #ff8c00;
   font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-weight: 700;
-  letter-spacing: 0.0625em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 #mainNav .navbar-brand img {
@@ -10931,11 +10933,11 @@ p {
 #mainNav .navbar-nav .nav-item .nav-link {
   font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   font-size: 0.95rem;
-  color: #fff;
-  letter-spacing: 0.0625em;
+  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: 0.05em;
 }
 #mainNav .navbar-nav .nav-item .nav-link.active, #mainNav .navbar-nav .nav-item .nav-link:hover {
-  color: #ffc800;
+  color: #ff8c00;
 }
 
 @media (min-width: 992px) {
@@ -10943,8 +10945,9 @@ p {
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
     border: none;
-    background-color: transparent;
-    transition: padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out;
+    background-color: rgba(31, 41, 55, 0.28);
+    backdrop-filter: blur(10px);
+    transition: padding-top 0.3s ease-in-out, padding-bottom 0.3s ease-in-out, background-color 0.3s ease-in-out;
   }
   #mainNav .navbar-brand {
     font-size: 1.5em;
@@ -10957,7 +10960,7 @@ p {
   #mainNav.navbar-shrink {
     padding-top: 1rem;
     padding-bottom: 1rem;
-    background-color: #212529;
+    background-color: rgba(31, 41, 55, 0.9);
   }
   #mainNav.navbar-shrink .navbar-brand {
     font-size: 1.25em;
@@ -10974,15 +10977,35 @@ p {
   }
 }
 header.masthead {
+  position: relative;
   padding-top: 10.5rem;
   padding-bottom: 6rem;
   text-align: center;
   color: #fff;
+  overflow: hidden;
+  background: #1f2937;
+}
+header.masthead::before {
+  content: "";
+  position: absolute;
+  inset: -24px;
   background-image: url("../img/3.jpeg");
   background-repeat: no-repeat;
   background-attachment: scroll;
   background-position: center center;
   background-size: cover;
+  filter: blur(5px);
+  transform: scale(1.035);
+}
+header.masthead::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(31, 41, 55, 0.62) 0%, rgba(31, 41, 55, 0.46) 45%, rgba(255, 140, 0, 0.14) 100%);
+}
+header.masthead .container {
+  position: relative;
+  z-index: 1;
 }
 header.masthead .masthead-subheading {
   font-size: 1.5rem;
@@ -11159,6 +11182,14 @@ header.masthead .masthead-heading {
   border: 7px solid #e9ecef;
   border-radius: 100%;
   background-color: #ffc800;
+}
+.timeline > li .timeline-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: inherit;
+  display: block;
 }
 .timeline > li .timeline-image h4, .timeline > li .timeline-image .h4 {
   font-size: 10px;
@@ -11350,10 +11381,27 @@ section#contact form#contactForm :-ms-input-placeholder {
 .text-white-outline-orange {
   color: #fff !important;
   text-shadow:
-    -1px -1px 0 #ffa500,
-    1px -1px 0 #ffa500,
-    -1px 1px 0 #ffa500,
-    1px 1px 0 #ffa500;
+    -1px -1px 0 #ff8c00,
+    1px -1px 0 #ff8c00,
+    -1px 1px 0 #ff8c00,
+    1px 1px 0 #ff8c00,
+    0 10px 24px rgba(31, 41, 55, 0.24);
+}
+header.masthead .btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #ff8c00;
+  --bs-btn-border-color: #ff8c00;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #ef7f00;
+  --bs-btn-hover-border-color: #ef7f00;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #cc6900;
+  --bs-btn-active-border-color: #cc6900;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #ff8c00;
+  --bs-btn-disabled-border-color: #ff8c00;
+  box-shadow: 0 12px 24px rgba(229, 119, 0, 0.22);
+  border-radius: 999px;
 }
 .btn-orange {
   color: #fff;

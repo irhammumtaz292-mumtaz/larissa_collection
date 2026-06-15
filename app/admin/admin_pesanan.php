@@ -247,36 +247,36 @@
         <section aria-label="Pesanan View" class="d-none d-md-block">
             <div class="row justify-content-center">
                 <div class="col-sm-6 col-md-8 col-lg-12">
-                    <div class="card">
+                    <div class="card admin-order-table-card">
                         <!-- Card Header -->
-                        <div class="card-header">
-                            <div class="card-wrap d-flex justify-content-between align-items-center">
+                        <div class="card-header admin-order-table-header">
+                            <div class="card-wrap admin-order-toolbar d-flex justify-content-between align-items-center">
                                 <h3 class="card-title">Pesanan</h3>
                                 <form class="form" action="" method="post">
-                                    <div class="input-group">
-                                        <input type="search" class="form-control me-3" id="searchNama" placeholder="Cari nama..." aria-label="Search">
-                                        <button class="btn btn-outline-info me-1" type="button" onclick="filterTable()"><i class="bi bi-search"></i></button>
+                                    <div class="input-group admin-order-search">
+                                        <input type="search" class="form-control" id="searchNama" placeholder="Cari nama..." aria-label="Search">
+                                        <button class="btn btn-outline-info" type="button" onclick="filterTable()"><i class="bi bi-search"></i></button>
                                     </div>
                                 </form>
                             </div>
 
-                            <div class="mb-2">
-                                <select class="form-select form-select-sm d-inline-block me-2" style="width: auto;" id="filterStatus" onchange="filterTable()">
+                            <div class="admin-order-filters">
+                                <select class="form-select form-select-sm d-inline-block" style="width: auto;" id="filterStatus" onchange="filterTable()">
                                     <option value="">Semua Status Harga</option>
                                     <option value="Menunggu Harga">Menunggu Harga</option>
                                     <option value="Harga Diberikan">Harga Diberikan</option>
                                     <option value="Disetujui">Disetujui</option>
                                     <option value="Ditolak">Ditolak</option>
                                 </select>
-                                <button class="btn btn-sm btn-secondary me-1" onclick="resetFilters()"><i class="bi bi-arrow-clockwise me-1"></i>Reset</button>
+                                <button class="btn btn-sm btn-secondary" onclick="resetFilters()"><i class="bi bi-arrow-clockwise me-1"></i>Reset</button>
                             </div>
                         </div>
                         <!-- /.card-header -->
 
                         <!-- Card Body -->
-                        <div class="card-body overflow-auto" style="max-height: 500px;">
+                        <div class="card-body admin-order-table-body overflow-auto" style="max-height: 500px;">
                             <div class="table-responsive">
-                                <table id="pesananTable" class="table table-sm table-bordered border-dark table-hover">
+                                <table id="pesananTable" class="table table-sm table-bordered border-dark table-hover admin-order-table align-middle">
                                     <thead class="text-center">
                                         <tr>
                                             <th class="bg-success">#</th>
@@ -298,23 +298,23 @@
                                             </tr>
                                         <?php else: ?>
                                             <?php $no = 1; foreach ($pesanan_list as $pesanan): ?>
-                                                <tr style="height: 10px;" data-nama="<?= strtolower(htmlspecialchars($pesanan['customer_nama'])) ?>" data-status="<?= htmlspecialchars($pesanan['status_harga'] ?? 'Menunggu Harga') ?>">
-                                                    <td scope="row" class="text-center"><?= $no++; ?></td>
-                                                    <td>
-                                                        <div><?= htmlspecialchars($pesanan['customer_nama']) ?></div>
+                                                <tr data-nama="<?= strtolower(htmlspecialchars($pesanan['customer_nama'])) ?>" data-status="<?= htmlspecialchars($pesanan['status_harga'] ?? 'Menunggu Harga') ?>">
+                                                    <td scope="row" class="text-center admin-order-number"><?= $no++; ?></td>
+                                                    <td class="admin-order-customer">
+                                                        <div class="admin-order-customer-name"><?= htmlspecialchars($pesanan['customer_nama']) ?></div>
                                                         <small class="text-muted"><?= htmlspecialchars($pesanan['customer_hp']) ?></small>
                                                     </td>
-                                                    <td><?= htmlspecialchars($pesanan['nama_produk']) ?></td>
-                                                    <td class="text-center"><?= intval($pesanan['jumlah_beli']) ?> pcs</td>
-                                                    <td><?= format_tanggal_pesanan($pesanan['tanggal_pesan'] ?? null) ?></td>
-                                                    <td class="fw-bold">
+                                                    <td class="admin-order-product"><?= htmlspecialchars($pesanan['nama_produk']) ?></td>
+                                                    <td class="text-center admin-order-qty"><?= intval($pesanan['jumlah_beli']) ?> pcs</td>
+                                                    <td class="admin-order-date"><?= format_tanggal_pesanan($pesanan['tanggal_pesan'] ?? null) ?></td>
+                                                    <td class="fw-bold admin-order-price">
                                                         <?php if (!empty($pesanan['total_harga'])): ?>
                                                             Rp <?= number_format(intval($pesanan['total_harga'])) ?>
                                                         <?php else: ?>
                                                             <span class="text-muted">Menunggu Harga</span>
                                                         <?php endif; ?>
                                                     </td>
-                                                    <td class="text-center">
+                                                    <td class="text-center admin-order-status">
                                                         <?php
                                                             $statusHarga = $pesanan['status_harga'] ?? 'Menunggu Harga';
                                                             $labelStatusHarga = $statusHarga;
@@ -341,7 +341,7 @@
                                                             <?= htmlspecialchars($labelStatusHarga) ?>
                                                         </span>
                                                     </td>
-                                                    <td class="text-center">
+                                                    <td class="text-center admin-order-status">
                                                         <?php
                                                             $statusPengerjaan = $pesanan['status_pengerjaan'] ?? 'Menunggu Pembayaran';
                                                             $badgePengerjaan = match($statusPengerjaan) {
@@ -356,14 +356,14 @@
                                                             <?= htmlspecialchars($statusPengerjaan) ?>
                                                         </span>
                                                     </td>
-                                                    <td class="text-center">
+                                                    <td class="text-center admin-order-proof">
                                                         <?php
                                                             $buktiPembayaran = $pesanan['bukti_pembayaran'] ?? '';
                                                             $adaBuktiFile = $buktiPembayaran !== '' && file_exists('../../assets/img/bukti_transaksi/' . $buktiPembayaran);
                                                             $adaTransaksi = !empty($pesanan['id_transaksi']);
                                                         ?>
                                                         <?php if ($adaBuktiFile || $adaTransaksi): ?>
-                                                            <button class="btn btn-sm btn-outline-info"
+                                                            <button class="btn btn-sm btn-outline-info admin-order-proof-btn"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#modalBukti"
                                                                     onclick="setBuktiModal(<?= htmlspecialchars(json_encode($adaBuktiFile ? $buktiPembayaran : ''), ENT_QUOTES) ?>, '<?= str_pad($pesanan['id_pesanan'], 6, '0', STR_PAD_LEFT) ?>', <?= intval($pesanan['id_transaksi'] ?? 0) ?>, <?= htmlspecialchars(json_encode($pesanan['status_pembayaran'] ?? ''), ENT_QUOTES) ?>, <?= intval($pesanan['jumlah_bayar'] ?? 0) ?>, <?= intval($pesanan['total_harga'] ?? $pesanan['harga'] ?? 0) ?>)">
@@ -374,31 +374,33 @@
                                                             <span class="badge bg-light text-dark">-</span>
                                                         <?php endif; ?>
                                                     </td>
-                                                    <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-warning mb-1"
+                                                    <td class="text-center admin-order-actions">
+                                                        <div class="admin-order-action-group">
+                                                        <button class="btn btn-sm btn-outline-warning"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#modalHarga"
                                                                 onclick="setHargaModal(<?= intval($pesanan['id_pesanan']) ?>, <?= intval($pesanan['total_harga'] ?? $pesanan['harga'] ?? 0) ?>, '<?= htmlspecialchars($pesanan['status_harga'] ?? 'Menunggu Harga', ENT_QUOTES) ?>', <?= htmlspecialchars(json_encode($pesanan['catatan_harga'] ?? '')) ?>)">
                                                             <i class="bi bi-cash-coin me-1"></i>Beri Harga
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-primary mb-1" 
+                                                        <button class="btn btn-sm btn-outline-primary" 
                                                                 data-bs-toggle="modal" 
                                                                 data-bs-target="#modalDetail"
                                                                 onclick="setDetailModal(<?= htmlspecialchars(json_encode($pesanan)) ?>)">
                                                             <i class="bi bi-eye me-1"></i>Lihat
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-success mb-1"
+                                                        <button class="btn btn-sm btn-outline-success"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#modalValidasi"
                                                                 onclick="setStatusPengerjaanModal(<?= intval($pesanan['id_pesanan']) ?>, '<?= htmlspecialchars($pesanan['status_pengerjaan'] ?? 'Menunggu Pembayaran', ENT_QUOTES) ?>', '<?= htmlspecialchars($pesanan['status_pembayaran'] ?? '', ENT_QUOTES) ?>')">
                                                             <i class="bi bi-gear me-1"></i>Pengerjaan
                                                         </button>
-                                                        <button class="btn btn-sm btn-outline-danger mb-1" 
+                                                        <button class="btn btn-sm btn-outline-danger" 
                                                                 data-bs-toggle="modal" 
                                                                 data-bs-target="#modalHapus"
                                                                 onclick="setHapusModal(<?= intval($pesanan['id_pesanan']) ?>, '<?= str_pad($pesanan['id_pesanan'], 6, '0', STR_PAD_LEFT) ?>')">
                                                             <i class="bi bi-trash me-1"></i>Hapus
                                                         </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>
@@ -758,6 +760,7 @@
 
     <!-- ===== JAVASCRIPT ===== -->
     <script>
+        // Mengisi modal bukti pembayaran dengan file, status, dan aksi validasi.
         function setBuktiModal(fileName, noPesanan, idTransaksi, statusPembayaran, jumlahBayar, totalHarga) {
             document.getElementById('buktiNoPesanan').textContent = noPesanan;
             const image = document.getElementById('buktiImage');
@@ -803,6 +806,7 @@
             formValidasi.classList.toggle('d-none', !(idTransaksi > 0 && statusPembayaran === 'Pending'));
         }
 
+        // Mengisi modal pengaturan harga pesanan.
         function setHargaModal(idPesanan, totalHarga, statusHarga, catatanHarga) {
             document.getElementById('hargaIdPesanan').value = idPesanan;
             document.getElementById('hargaTotalInput').value = totalHarga > 0 ? totalHarga : '';
@@ -810,6 +814,7 @@
             document.getElementById('hargaCatatanInput').value = catatanHarga || '';
         }
 
+        // Mengamankan teks sebelum dimasukkan ke HTML.
         function escapeHtml(value) {
             return String(value ?? '')
                 .replaceAll('&', '&amp;')
@@ -819,6 +824,7 @@
                 .replaceAll("'", '&#039;');
         }
 
+        // Membuat label status harga berdasarkan status harga dan pembayaran.
         function formatStatusHarga(statusHarga, statusPembayaran) {
             if (statusHarga === 'Menunggu Harga') {
                 return 'Pending';
@@ -837,6 +843,7 @@
             return statusHarga || 'Menunggu Harga';
         }
 
+        // Membuat tampilan detail desain pesanan untuk modal detail.
         function renderDesignDetail(pesanan) {
             if (pesanan.desain_custom_files) {
                 let files = {};
@@ -924,6 +931,7 @@
             `;
         }
 
+        // Memformat tanggal database menjadi format tampilan Indonesia.
         function formatTanggalPesanan(value) {
             if (!value) {
                 return '-';
@@ -938,6 +946,38 @@
             return `${parts[2]}/${parts[1]}/${parts[0]}${jam}`;
         }
 
+        // Membuat tampilan rincian ukuran dari data JSON ukuran pesanan.
+        function renderUkuranDetail(ukuranValue) {
+            let ukuran = {};
+
+            try {
+                ukuran = typeof ukuranValue === 'string'
+                    ? JSON.parse(ukuranValue || '{}')
+                    : (ukuranValue || {});
+            } catch (error) {
+                ukuran = {};
+            }
+
+            const ukuranHtml = Object.entries(ukuran)
+                .filter(([, qty]) => parseInt(qty || 0, 10) > 0)
+                .map(([size, qty]) => `
+                    <div class="col-auto">
+                        <div class="border rounded-3 bg-light px-3 py-2 text-center">
+                            <div class="text-muted small">Ukuran ${escapeHtml(size)}</div>
+                            <div class="fw-bold">${parseInt(qty, 10)} pcs</div>
+                        </div>
+                    </div>
+                `)
+                .join('');
+
+            return ukuranHtml || `
+                <div class="col-12">
+                    <p class="fw-bold mb-0">-</p>
+                </div>
+            `;
+        }
+
+        // Mengisi modal detail pesanan dengan data pesanan lengkap.
         function setDetailModal(pesanan) {
             document.getElementById('detailNoPesanan').textContent = '#' + String(pesanan.id_pesanan).padStart(6, '0');
             
@@ -990,6 +1030,13 @@
                         <p class="fw-bold">${escapeHtml(pesanan.nama_warna || '-')}</p>
                     </div>
                 </div>
+
+                <div class="mb-3">
+                    <p class="text-muted small mb-2">Ukuran Yang Dipesan</p>
+                    <div class="row g-2">
+                        ${renderUkuranDetail(pesanan.ukuran)}
+                    </div>
+                </div>
                 
                 <hr>
                 
@@ -1018,6 +1065,7 @@
             document.getElementById('detailContent').innerHTML = content;
         }
 
+        // Mengisi modal status pengerjaan dan membatasi opsi selesai jika belum lunas.
         function setStatusPengerjaanModal(idPesanan, statusPengerjaan, statusPembayaran) {
             document.getElementById('pengerjaanIdPesanan').value = idPesanan;
             const select = document.getElementById('statusPengerjaan');
@@ -1032,17 +1080,20 @@
                 : (statusPengerjaan || 'Menunggu Pembayaran');
         }
 
+        // Mengisi modal konfirmasi hapus pesanan.
         function setHapusModal(idPesanan, noPesanan) {
             document.getElementById('hapusIdPesanan').value = idPesanan;
             document.getElementById('hapusNoPesanan').textContent = noPesanan;
         }
 
+        // Mengosongkan filter tabel pesanan.
         function resetFilters() {
             document.getElementById('searchNama').value = '';
             document.getElementById('filterStatus').value = '';
             filterTable();
         }
 
+        // Memfilter baris tabel pesanan berdasarkan nama dan status.
         function filterTable() {
             const searchNama = document.getElementById('searchNama').value.toLowerCase();
             const filterStatus = document.getElementById('filterStatus').value;

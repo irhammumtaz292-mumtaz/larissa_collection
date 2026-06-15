@@ -9,6 +9,43 @@
 
 window.addEventListener('DOMContentLoaded', event => {
 
+    const scrollToAnchor = function (hash) {
+        const target = document.querySelector(hash);
+
+        if (!target) {
+            return;
+        }
+
+        const navbar = document.body.querySelector('#mainNav');
+        const navbarHeight = navbar ? navbar.offsetHeight : 0;
+        const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+
+        window.scrollTo({
+            top: targetPosition,
+            behavior: 'smooth'
+        });
+    };
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', event => {
+            const hash = anchor.getAttribute('href');
+
+            if (!hash || hash === '#') {
+                return;
+            }
+
+            const target = document.querySelector(hash);
+
+            if (!target) {
+                return;
+            }
+
+            event.preventDefault();
+            scrollToAnchor(hash);
+            history.pushState(null, '', hash);
+        });
+    });
+
     // Navbar shrink function
     var navbarShrink = function () {
         const navbarCollapsible = document.body.querySelector('#mainNav');

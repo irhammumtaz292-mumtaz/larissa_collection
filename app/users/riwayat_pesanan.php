@@ -58,20 +58,63 @@
   ";
 
   $pesanan_list = select($query_pesanan_list);
+  $total_pesanan = count($pesanan_list);
+  $pesanan_selesai = 0;
+  $pesanan_proses = 0;
+  $pesanan_belum_bayar = 0;
+
+  foreach ($pesanan_list as $item_pesanan) {
+    if (($item_pesanan['tanggal_selesai'] ?? null)) {
+      $pesanan_selesai++;
+    }
+
+    $status_bayar_item = $item_pesanan['status_pembayaran'] ?? '';
+    if (in_array($status_bayar_item, ['Pending', 'Belum Bayar', ''], true)) {
+      $pesanan_belum_bayar++;
+    }
+
+    if (($item_pesanan['tanggal_selesai'] ?? null) === null) {
+      $pesanan_proses++;
+    }
+  }
 
 ?>
 
-<main>
-  <section aria-label="Riwayat Pesanan" class="py-5">
+<main class="order-history-page">
+  <section aria-label="Riwayat Pesanan" class="order-history-section py-5">
     <div class="container">
-      <div class="row mb-5">
+      <div class="row mb-4">
         <div class="col-12">
-          <div class="text-center mb-4">
+          <div class="order-history-hero text-center">
+            <span class="order-history-eyebrow">Riwayat Pesanan</span>
             <h2 class="fw-bold mb-2">Riwayat Pesanan Anda</h2>
-            <p class="text-muted">Kelola dan lihat detail semua pesanan Anda</p>
+            <p class="text-muted mb-0">Kelola dan lihat detail semua pesanan Anda dengan tampilan yang lebih rapi dan mudah dibaca.</p>
           </div>
         </div>
       </div>
+
+      <?php if (!empty($pesanan_list)): ?>
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <div class="order-history-stat-card">
+              <span class="order-history-stat-label">Total Pesanan</span>
+              <strong class="order-history-stat-value"><?= number_format($total_pesanan) ?></strong>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="order-history-stat-card">
+              <span class="order-history-stat-label">Masih Diproses</span>
+              <strong class="order-history-stat-value"><?= number_format($pesanan_proses) ?></strong>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="order-history-stat-card">
+              <span class="order-history-stat-label">Belum Lunas</span>
+              <strong class="order-history-stat-value"><?= number_format($pesanan_belum_bayar) ?></strong>
+            </div>
+          </div>
+        </div>
+      <?php endif; ?>
 
       <div class="row">
         <div class="col-12">
@@ -85,23 +128,31 @@
 
           <?php if (empty($pesanan_list)): ?>
             <!-- KOSONG -->
-            <div class="card border-0 shadow-lg rounded-5">
+            <div class="card border-0 shadow-lg rounded-5 order-history-empty-card">
               <div class="card-body p-5 text-center">
                 <div class="mb-3">
                   <i class="bi bi-inbox" style="font-size: 48px; color: #ccc;"></i>
                 </div>
                 <h4 class="fw-bold mb-2">Belum Ada Pesanan</h4>
                 <p class="text-muted mb-4">Anda belum membuat pesanan apapun. Mulai berbelanja sekarang!</p>
-                <a href="index.php#katalog" class="btn btn-warning rounded-pill px-4 py-2 fw-semibold text-dark">
+                <a href="index.php#katalog" class="btn btn-warning rounded-pill px-4 py-2 fw-semibold text-dark order-history-primary-btn">
                   <i class="bi bi-bag-plus me-2"></i>Mulai Pesan
                 </a>
               </div>
             </div>
           <?php else: ?>
             <!-- DAFTAR PESANAN -->
-            <div class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
+            <div class="order-history-table-card">
+              <div class="order-history-table-head d-flex flex-column flex-lg-row justify-content-between align-items-lg-center">
+                <div>
+                  <h4 class="mb-1">Daftar Pesanan</h4>
+                  <p class="text-muted mb-0">Lihat status harga, pembayaran, dan kuitansi tiap pesanan Anda.</p>
+                </div>
+                <span class="order-history-table-chip mt-3 mt-lg-0"><?= number_format($total_pesanan) ?> pesanan tercatat</span>
+              </div>
+              <div class="table-responsive order-history-table-wrap">
+              <table class="table table-hover order-history-table">
+                <thead>
                   <tr>
                     <th class="fw-bold">No. Pesanan</th>
                     <th class="fw-bold">Produk</th>
@@ -118,16 +169,16 @@
                 <tbody>
                   <?php foreach ($pesanan_list as $pesanan): ?>
                   <tr>
-                    <td class="fw-bold">#<?= str_pad($pesanan['id_pesanan'], 6, '0', STR_PAD_LEFT) ?></td>
+                    <td class="fw-bold order-history-order-id">#<?= str_pad($pesanan['id_pesanan'], 6, '0', STR_PAD_LEFT) ?></td>
                     <td><?= htmlspecialchars($pesanan['nama_produk']) ?></td>
                     <td>
-                      <span class="badge bg-light text-dark"><?= htmlspecialchars($pesanan['jenis_bahan']) ?></span>
-                      <span class="badge bg-info text-white"><?= htmlspecialchars($pesanan['nama_warna']) ?></span>
+                      <span class="badge order-history-soft-badge"><?= htmlspecialchars($pesanan['jenis_bahan']) ?></span>
+                      <span class="badge order-history-soft-badge order-history-soft-badge-accent"><?= htmlspecialchars($pesanan['nama_warna']) ?></span>
                     </td>
                     <td><?= $pesanan['jumlah_beli'] ?> pcs</td>
                     <td>
                       <?php if (!empty($pesanan['total_harga'])): ?>
-                        <span class="fw-bold text-success">Rp <?= number_format(intval($pesanan['total_harga'])) ?></span>
+                        <span class="fw-bold order-history-price">Rp <?= number_format(intval($pesanan['total_harga'])) ?></span>
                       <?php else: ?>
                         <span class="text-muted">Menunggu admin</span>
                       <?php endif; ?>
@@ -153,7 +204,7 @@
                           default => 'secondary'
                         };
                       ?>
-                      <span class="badge bg-<?= $badgeHarga ?>"><?= htmlspecialchars($labelStatusHarga) ?></span>
+                      <span class="badge bg-<?= $badgeHarga ?> order-history-status-badge"><?= htmlspecialchars($labelStatusHarga) ?></span>
                     </td>
                     <td>
                       <?php
@@ -166,17 +217,17 @@
                         };
                         $textColor = $status === 'DP' ? 'text-dark' : '';
                       ?>
-                      <span class="badge bg-<?= $badgeColor ?> <?= $textColor ?>"><?= $status ?></span>
+                      <span class="badge bg-<?= $badgeColor ?> <?= $textColor ?> order-history-status-badge"><?= $status ?></span>
                     </td>
                     <td><?= format_tanggal_pesanan($pesanan['tanggal_pesan'] ?? null) ?></td>
                     <td><?= format_tanggal_pesanan($pesanan['tanggal_selesai'] ?? null) ?></td>
                     <td>
                       <?php if (!empty($pesanan['total_harga']) && empty($pesanan['id_transaksi'])): ?>
-                        <a href="kuitansi.php?id_pesanan=<?= $pesanan['id_pesanan'] ?>" class="btn btn-sm btn-warning text-dark" title="Bayar Pesanan">
+                        <a href="kuitansi.php?id_pesanan=<?= $pesanan['id_pesanan'] ?>" class="btn btn-sm btn-warning text-dark order-history-primary-btn" title="Bayar Pesanan">
                           <i class="bi bi-wallet2"></i> Bayar
                         </a>
                       <?php else: ?>
-                        <a href="kuitansi.php?id_pesanan=<?= $pesanan['id_pesanan'] ?>" class="btn btn-sm btn-info text-white" title="Lihat Kuitansi">
+                        <a href="kuitansi.php?id_pesanan=<?= $pesanan['id_pesanan'] ?>" class="btn btn-sm btn-info text-white order-history-secondary-btn" title="Lihat Kuitansi">
                           <i class="bi bi-receipt"></i> Kuitansi
                         </a>
                       <?php endif; ?>
@@ -185,6 +236,7 @@
                   <?php endforeach; ?>
                 </tbody>
               </table>
+            </div>
             </div>
           <?php endif; ?>
         </div>

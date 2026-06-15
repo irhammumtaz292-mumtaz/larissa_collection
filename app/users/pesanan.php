@@ -231,7 +231,7 @@
                     <div class="col-md-6">
                       <label class="form-label fw-medium">Bahan & Warna</label>
                       <select name="id_bahan" class="form-select rounded-3" required>
-                        <option value="" selected disabled>Pilih Bahan</option>
+                        <option value="" selected disabled>Pilih Bahan &amp; Warna</option>
                         <?php
                           $prev_jenis = '';
                           $close_group = false;
@@ -245,7 +245,7 @@
                             }
                         ?>
                           <option value="<?= $bhn['id_bahan'] ?>">
-                            <?= htmlspecialchars($bhn['nama_warna']) ?>
+                            <?= htmlspecialchars($bhn['jenis_bahan']) ?> - <?= htmlspecialchars($bhn['nama_warna']) ?>
                           </option>
                         <?php endforeach; if ($close_group) echo '</optgroup>'; ?>
                       </select>
@@ -269,44 +269,115 @@
                         </p>
 
                         <!-- FORM UKURAN -->
-                        <div class="row g-3">
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle text-center size-input-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>S</th>
+                                        <th>M</th>
+                                        <th>L</th>
+                                        <th>XL</th>
+                                        <th>XXL</th>
+                                        <th>XXXL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <input type="number" name="size_s" class="form-control text-center" value="0" min="0" aria-label="Jumlah ukuran S">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="size_m" class="form-control text-center" value="0" min="0" aria-label="Jumlah ukuran M">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="size_l" class="form-control text-center" value="0" min="0" aria-label="Jumlah ukuran L">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="size_xl" class="form-control text-center" value="0" min="0" aria-label="Jumlah ukuran XL">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="size_xxl" class="form-control text-center" value="0" min="0" aria-label="Jumlah ukuran XXL">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="size_xxxl" class="form-control text-center" value="0" min="0" aria-label="Jumlah ukuran XXXL">
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-                            <!-- S -->
-                            <div class="col">
-                                <label class="form-label fw-semibold">S</label>
-                                <input type="number" name="size_s" class="form-control text-center rounded-4" value="0" min="0">
+                        <div class="size-guide mt-4" aria-label="Panduan ukuran pakaian">
+                            <div class="size-guide-scroll">
+                                <table class="size-guide-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Size</th>
+                                            <th>Panjang Badan</th>
+                                            <th>Lebar Dada</th>
+                                            <th>Lebar Bahu</th>
+                                            <th>Panjang Tangan<br>Lengan Pendek</th>
+                                            <th>Panjang Tangan<br>Lengan Panjang</th>
+                                            <th>Lebar Ketiak</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <th>S</th>
+                                            <td>69</td>
+                                            <td>49</td>
+                                            <td>15</td>
+                                            <td>22</td>
+                                            <td>57</td>
+                                            <td>48</td>
+                                        </tr>
+                                        <tr>
+                                            <th>M</th>
+                                            <td>71</td>
+                                            <td>52</td>
+                                            <td>16</td>
+                                            <td>23</td>
+                                            <td>58</td>
+                                            <td>50</td>
+                                        </tr>
+                                        <tr>
+                                            <th>L</th>
+                                            <td>73</td>
+                                            <td>54</td>
+                                            <td>16</td>
+                                            <td>24</td>
+                                            <td>59</td>
+                                            <td>52</td>
+                                        </tr>
+                                        <tr>
+                                            <th>XL</th>
+                                            <td>75</td>
+                                            <td>57</td>
+                                            <td>18</td>
+                                            <td>25</td>
+                                            <td>60</td>
+                                            <td>54</td>
+                                        </tr>
+                                        <tr>
+                                            <th>2XL</th>
+                                            <td>77</td>
+                                            <td>60</td>
+                                            <td>18</td>
+                                            <td>26</td>
+                                            <td>61</td>
+                                            <td>56</td>
+                                        </tr>
+                                        <tr>
+                                            <th>3XL</th>
+                                            <td>78</td>
+                                            <td>62</td>
+                                            <td>19</td>
+                                            <td>27</td>
+                                            <td>62</td>
+                                            <td>57 <span>*Centimeter<br>*toleransi 0,5-1 cm</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
-
-                            <!-- M -->
-                            <div class="col">
-                                <label class="form-label fw-semibold">M</label>
-                                <input type="number" name="size_m" class="form-control text-center rounded-4" value="0" min="0">
-                            </div>
-
-                            <!-- L -->
-                            <div class="col">
-                                <label class="form-label fw-semibold">L</label>
-                                <input type="number" name="size_l" class="form-control text-center rounded-4" value="0" min="0">
-                            </div>
-
-                            <!-- XL -->
-                            <div class="col">
-                                <label class="form-label fw-semibold">XL</label>
-                                <input type="number" name="size_xl" class="form-control text-center rounded-4" value="0" min="0">
-                            </div>
-
-                            <!-- XXL -->
-                            <div class="col">
-                                <label class="form-label fw-semibold">XXL</label>
-                                <input type="number" name="size_xxl" class="form-control text-center rounded-4" value="0" min="0">
-                            </div>
-
-                            <!-- XXXL -->
-                            <div class="col">
-                                <label class="form-label fw-semibold">XXXL</label>
-                                <input type="number" name="size_xxxl" class="form-control text-center rounded-4" value="0" min="0">
-                            </div>
-
                         </div>
 
                     </div>

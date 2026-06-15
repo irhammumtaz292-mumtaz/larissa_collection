@@ -242,7 +242,7 @@
         </div>
 
         <div class="col-lg-4">
-          <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 80px;">
+          <div class="card border-0 shadow-sm rounded-4 sticky-lg-top" style="top: 120px;">
             <div class="card-body p-4">
               <h5 class="fw-bold mb-3">Data Pemesan</h5>
               <div class="mb-3">

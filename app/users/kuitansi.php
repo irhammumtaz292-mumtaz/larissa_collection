@@ -738,6 +738,7 @@
                   const sisaDisplay = document.getElementById('sisaPembayaranAwalDisplay');
                   const formatRupiah = value => 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
 
+                  // Menghitung ulang ringkasan nominal bayar dan sisa pembayaran.
                   function updateRingkasanPembayaran() {
                     const jenis = document.querySelector('input[name="jenis_pembayaran"]:checked')?.value || 'dp';
                     const isDp = jenis === 'dp';
@@ -1068,6 +1069,7 @@
 </main>
 
 <script>
+  // Membuka dialog cetak untuk mencetak halaman kuitansi.
   function printKuitansi() {
     const element = document.getElementById('kuitansi-container');
     const printWindow = window.open('', '', 'width=800,height=600');

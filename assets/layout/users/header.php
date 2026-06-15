@@ -1,165 +1,167 @@
 <?php
 
-    // Koneksi ke database dan backend
-    require_once '../../config/db/db.php';
-    require_once '../../config/controller/controller.php';
+// Koneksi ke database dan backend
+require_once '../../config/db/db.php';
+require_once '../../config/controller/controller.php';
 
-    $userAkunAlert = $_SESSION['user_akun_flash'] ?? null;
-    unset($_SESSION['user_akun_flash']);
+$userAkunAlert = $_SESSION['user_akun_flash'] ?? null;
+unset($_SESSION['user_akun_flash']);
 
-    $userAkunData = [
-        'id_akun' => $_SESSION['id_akun'] ?? '',
-        'nama' => $_SESSION['nama'] ?? '',
-        'username' => $_SESSION['username'] ?? '',
-        'email' => $_SESSION['email'] ?? '',
-        'no_hp' => $_SESSION['no_hp'] ?? '',
-        'alamat' => $_SESSION['alamat'] ?? '',
+$userAkunData = [
+    'id_akun' => $_SESSION['id_akun'] ?? '',
+    'nama' => $_SESSION['nama'] ?? '',
+    'username' => $_SESSION['username'] ?? '',
+    'email' => $_SESSION['email'] ?? '',
+    'no_hp' => $_SESSION['no_hp'] ?? '',
+    'alamat' => $_SESSION['alamat'] ?? '',
+];
+
+$idAkunLogin = intval($_SESSION['id_akun'] ?? 0);
+$isCustomerLogin = $idAkunLogin > 0 && ($_SESSION['role'] ?? null) === 'Customer';
+$landingNavPrefix = basename($_SERVER['SCRIPT_NAME'] ?? '') === 'index.php' ? '' : 'index.php';
+
+if ($isCustomerLogin && isset($_POST['simpan_kelola_akun_user'])) {
+    $nama = trim(strip_tags($_POST['nama'] ?? ''));
+    $username = trim(strip_tags($_POST['username'] ?? ''));
+    $email = trim(strip_tags($_POST['email'] ?? ''));
+    $noHp = trim(strip_tags($_POST['no_hp'] ?? ''));
+    $alamat = trim(strip_tags($_POST['alamat'] ?? ''));
+    $password = $_POST['password'] ?? '';
+    $konfirmasiPassword = $_POST['konfirmasi_password'] ?? '';
+    $passwordDiisi = $password !== '' || $konfirmasiPassword !== '';
+
+    $flash = [
+        'type' => 'danger',
+        'message' => 'Data akun gagal diperbarui.',
     ];
 
-    $idAkunLogin = intval($_SESSION['id_akun'] ?? 0);
-    $isCustomerLogin = $idAkunLogin > 0 && ($_SESSION['role'] ?? null) === 'Customer';
+    if ($nama === '' || $username === '' || $email === '' || $noHp === '' || $alamat === '') {
+        $flash['message'] = 'Semua data akun wajib diisi.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $flash['message'] = 'Format email tidak valid.';
+    } elseif ($passwordDiisi && strlen($password) < 5) {
+        $flash['message'] = 'Password baru minimal 5 karakter.';
+    } elseif ($passwordDiisi && $password !== $konfirmasiPassword) {
+        $flash['message'] = 'Konfirmasi password tidak sama.';
+    } else {
+        $duplikat = false;
+        $stmtCek = mysqli_prepare($db, "SELECT id_akun FROM akun WHERE (username = ? OR email = ?) AND id_akun <> ? LIMIT 1");
 
-    if ($isCustomerLogin && isset($_POST['simpan_kelola_akun_user'])) {
-        $nama = trim(strip_tags($_POST['nama'] ?? ''));
-        $username = trim(strip_tags($_POST['username'] ?? ''));
-        $email = trim(strip_tags($_POST['email'] ?? ''));
-        $noHp = trim(strip_tags($_POST['no_hp'] ?? ''));
-        $alamat = trim(strip_tags($_POST['alamat'] ?? ''));
-        $password = $_POST['password'] ?? '';
-        $konfirmasiPassword = $_POST['konfirmasi_password'] ?? '';
-        $passwordDiisi = $password !== '' || $konfirmasiPassword !== '';
+        if ($stmtCek) {
+            mysqli_stmt_bind_param($stmtCek, 'ssi', $username, $email, $idAkunLogin);
+            mysqli_stmt_execute($stmtCek);
+            mysqli_stmt_store_result($stmtCek);
+            $duplikat = mysqli_stmt_num_rows($stmtCek) > 0;
+            mysqli_stmt_close($stmtCek);
+        }
 
-        $flash = [
-            'type' => 'danger',
-            'message' => 'Data akun gagal diperbarui.',
-        ];
-
-        if ($nama === '' || $username === '' || $email === '' || $noHp === '' || $alamat === '') {
-            $flash['message'] = 'Semua data akun wajib diisi.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $flash['message'] = 'Format email tidak valid.';
-        } elseif ($passwordDiisi && strlen($password) < 5) {
-            $flash['message'] = 'Password baru minimal 5 karakter.';
-        } elseif ($passwordDiisi && $password !== $konfirmasiPassword) {
-            $flash['message'] = 'Konfirmasi password tidak sama.';
+        if ($duplikat) {
+            $flash['message'] = 'Username atau email sudah digunakan akun lain.';
         } else {
-            $duplikat = false;
-            $stmtCek = mysqli_prepare($db, "SELECT id_akun FROM akun WHERE (username = ? OR email = ?) AND id_akun <> ? LIMIT 1");
+            mysqli_begin_transaction($db);
 
-            if ($stmtCek) {
-                mysqli_stmt_bind_param($stmtCek, 'ssi', $username, $email, $idAkunLogin);
-                mysqli_stmt_execute($stmtCek);
-                mysqli_stmt_store_result($stmtCek);
-                $duplikat = mysqli_stmt_num_rows($stmtCek) > 0;
-                mysqli_stmt_close($stmtCek);
-            }
-
-            if ($duplikat) {
-                $flash['message'] = 'Username atau email sudah digunakan akun lain.';
-            } else {
-                mysqli_begin_transaction($db);
-
-                $stmtCustomer = mysqli_prepare(
-                    $db,
-                    "UPDATE customer c
+            $stmtCustomer = mysqli_prepare(
+                $db,
+                "UPDATE customer c
                     JOIN akun a ON a.id_customer = c.id_customer
                     SET c.nama = ?, c.no_hp = ?, c.alamat = ?
                     WHERE a.id_akun = ? AND a.role = 'Customer'"
-                );
+            );
 
-                if ($stmtCustomer) {
-                    mysqli_stmt_bind_param($stmtCustomer, 'sssi', $nama, $noHp, $alamat, $idAkunLogin);
-                    $updateCustomer = mysqli_stmt_execute($stmtCustomer);
-                    mysqli_stmt_close($stmtCustomer);
-                } else {
-                    $updateCustomer = false;
-                }
+            if ($stmtCustomer) {
+                mysqli_stmt_bind_param($stmtCustomer, 'sssi', $nama, $noHp, $alamat, $idAkunLogin);
+                $updateCustomer = mysqli_stmt_execute($stmtCustomer);
+                mysqli_stmt_close($stmtCustomer);
+            } else {
+                $updateCustomer = false;
+            }
 
-                if ($passwordDiisi) {
-                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-                    $stmtAkun = mysqli_prepare($db, "UPDATE akun SET username = ?, email = ?, password = ? WHERE id_akun = ? AND role = 'Customer'");
-
-                    if ($stmtAkun) {
-                        mysqli_stmt_bind_param($stmtAkun, 'sssi', $username, $email, $passwordHash, $idAkunLogin);
-                    }
-                } else {
-                    $stmtAkun = mysqli_prepare($db, "UPDATE akun SET username = ?, email = ? WHERE id_akun = ? AND role = 'Customer'");
-
-                    if ($stmtAkun) {
-                        mysqli_stmt_bind_param($stmtAkun, 'ssi', $username, $email, $idAkunLogin);
-                    }
-                }
+            if ($passwordDiisi) {
+                $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+                $stmtAkun = mysqli_prepare($db, "UPDATE akun SET username = ?, email = ?, password = ? WHERE id_akun = ? AND role = 'Customer'");
 
                 if ($stmtAkun) {
-                    $updateAkun = mysqli_stmt_execute($stmtAkun);
-                    mysqli_stmt_close($stmtAkun);
-                } else {
-                    $updateAkun = false;
+                    mysqli_stmt_bind_param($stmtAkun, 'sssi', $username, $email, $passwordHash, $idAkunLogin);
                 }
+            } else {
+                $stmtAkun = mysqli_prepare($db, "UPDATE akun SET username = ?, email = ? WHERE id_akun = ? AND role = 'Customer'");
 
-                if ($updateCustomer && $updateAkun) {
-                    mysqli_commit($db);
-
-                    $_SESSION['nama'] = $nama;
-                    $_SESSION['username'] = $username;
-                    $_SESSION['email'] = $email;
-                    $_SESSION['no_hp'] = $noHp;
-                    $_SESSION['alamat'] = $alamat;
-
-                    $flash = [
-                        'type' => 'success',
-                        'message' => 'Data akun berhasil diperbarui.',
-                    ];
-                } else {
-                    mysqli_rollback($db);
+                if ($stmtAkun) {
+                    mysqli_stmt_bind_param($stmtAkun, 'ssi', $username, $email, $idAkunLogin);
                 }
             }
-        }
 
-        $_SESSION['user_akun_flash'] = $flash;
-        header('Location: ' . ($_SERVER['REQUEST_URI'] ?? './'));
-        exit;
+            if ($stmtAkun) {
+                $updateAkun = mysqli_stmt_execute($stmtAkun);
+                mysqli_stmt_close($stmtAkun);
+            } else {
+                $updateAkun = false;
+            }
+
+            if ($updateCustomer && $updateAkun) {
+                mysqli_commit($db);
+
+                $_SESSION['nama'] = $nama;
+                $_SESSION['username'] = $username;
+                $_SESSION['email'] = $email;
+                $_SESSION['no_hp'] = $noHp;
+                $_SESSION['alamat'] = $alamat;
+
+                $flash = [
+                    'type' => 'success',
+                    'message' => 'Data akun berhasil diperbarui.',
+                ];
+            } else {
+                mysqli_rollback($db);
+            }
+        }
     }
 
-    if ($isCustomerLogin) {
-        $stmtAkunLogin = mysqli_prepare(
-            $db,
-            "SELECT a.id_akun, c.nama, a.username, a.email, c.no_hp, c.alamat
+    $_SESSION['user_akun_flash'] = $flash;
+    header('Location: ' . ($_SERVER['REQUEST_URI'] ?? './'));
+    exit;
+}
+
+if ($isCustomerLogin) {
+    $stmtAkunLogin = mysqli_prepare(
+        $db,
+        "SELECT a.id_akun, c.nama, a.username, a.email, c.no_hp, c.alamat
             FROM akun a
             JOIN customer c ON a.id_customer = c.id_customer
             WHERE a.id_akun = ? AND a.role = 'Customer'
             LIMIT 1"
-        );
+    );
 
-        if ($stmtAkunLogin) {
-            mysqli_stmt_bind_param($stmtAkunLogin, 'i', $idAkunLogin);
-            mysqli_stmt_execute($stmtAkunLogin);
-            mysqli_stmt_bind_result($stmtAkunLogin, $dbIdAkun, $dbNama, $dbUsername, $dbEmail, $dbNoHp, $dbAlamat);
+    if ($stmtAkunLogin) {
+        mysqli_stmt_bind_param($stmtAkunLogin, 'i', $idAkunLogin);
+        mysqli_stmt_execute($stmtAkunLogin);
+        mysqli_stmt_bind_result($stmtAkunLogin, $dbIdAkun, $dbNama, $dbUsername, $dbEmail, $dbNoHp, $dbAlamat);
 
-            if (mysqli_stmt_fetch($stmtAkunLogin)) {
-                $userAkunData = [
-                    'id_akun' => $dbIdAkun,
-                    'nama' => $dbNama,
-                    'username' => $dbUsername,
-                    'email' => $dbEmail,
-                    'no_hp' => $dbNoHp,
-                    'alamat' => $dbAlamat,
-                ];
-            }
-
-            mysqli_stmt_close($stmtAkunLogin);
+        if (mysqli_stmt_fetch($stmtAkunLogin)) {
+            $userAkunData = [
+                'id_akun' => $dbIdAkun,
+                'nama' => $dbNama,
+                'username' => $dbUsername,
+                'email' => $dbEmail,
+                'no_hp' => $dbNoHp,
+                'alamat' => $dbAlamat,
+            ];
         }
+
+        mysqli_stmt_close($stmtAkunLogin);
     }
+}
 
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="Landing page konveksi dengan katalog produk dan informasi layanan">
     <meta name="author" content="Larisa Collection">
-    <title><?= htmlspecialchars($title);?></title>
+    <title><?= htmlspecialchars($title); ?></title>
     <link rel="icon" type="image/x-icon" href="../../assets/favicon.ico" />
     <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css" />
@@ -169,6 +171,7 @@
     <link href="../../assets/css/styles.css" rel="stylesheet">
     <link href="../../assets/css/pesanan.css" rel="stylesheet">
 </head>
+
 <body id="page-top">
 
     <!-- HEADER -->
@@ -182,10 +185,10 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav text-uppercase ms-auto py-4 py-lg-0">
-                        <li class="nav-item"><a class="nav-link" href="#services">Layanan</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#katalog">Katalog</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#about">Tentang</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#contact">Kontak</a></li>
+                        <li class="nav-item"><a class="nav-link" href="<?= $landingNavPrefix ?>#services">Layanan</a></li>
+                        <li class="nav-item"><a class="nav-link" href="<?= $landingNavPrefix ?>#katalog">Katalog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="<?= $landingNavPrefix ?>#about">Tentang</a></li>
+                        <li class="nav-item"><a class="nav-link" href="<?= $landingNavPrefix ?>#contact">Kontak</a></li>
                     </ul>
                     <div class="d-flex align-items-center ms-lg-3">
                         <div class="dropdown">
@@ -203,7 +206,9 @@
                                             <i class="bi bi-person-gear me-2"></i>Kelola Data Akun
                                         </button>
                                     </li>
-                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
                                     <li><a class="dropdown-item text-danger" href="../../logout.php"><i class="bi bi-box-arrow-right me-2"></i>Sign Out</a></li>
                                 <?php else : ?>
                                     <li><a class="dropdown-item" href="../../login.php"><i class="bi bi-box-arrow-in-right me-2"></i>Login</a></li>

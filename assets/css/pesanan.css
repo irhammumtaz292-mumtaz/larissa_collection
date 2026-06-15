@@ -104,6 +104,92 @@ input[type="number"]{
     font-weight:600;
 }
 
+.size-input-table {
+    min-width: 440px;
+    border-color: #e5e7eb;
+}
+
+.size-input-table thead th {
+    padding: 0.45rem;
+    background: #fff7d6;
+    color: #111827;
+    font-size: 0.85rem;
+    font-weight: 800;
+    border-color: #f3d55b;
+}
+
+.size-input-table tbody td {
+    padding: 0.4rem;
+    background: #ffffff;
+    border-color: #e5e7eb;
+}
+
+.size-input-table .form-control {
+    min-width: 48px;
+    min-height: 36px;
+    padding: 0.25rem 0.35rem;
+    border-radius: 8px !important;
+    font-size: 0.85rem;
+}
+
+.size-guide {
+    border: 2px solid #0ea5d8;
+    background: #ffffff;
+}
+
+.size-guide-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.size-guide-table {
+    width: 100%;
+    min-width: 620px;
+    margin: 0;
+    border-collapse: collapse;
+    color: #050505;
+    font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    background:
+        radial-gradient(ellipse at 22% 10%, rgba(186, 232, 248, 0.8) 0 26%, transparent 27%),
+        radial-gradient(ellipse at 52% 8%, rgba(186, 232, 248, 0.72) 0 24%, transparent 25%),
+        #ffffff;
+}
+
+.size-guide-table th,
+.size-guide-table td {
+    padding: 0.32rem 0.45rem;
+    border: 2px solid #0ea5d8;
+    font-size: clamp(0.95rem, 2vw, 1.55rem);
+    line-height: 1.05;
+    vertical-align: middle;
+}
+
+.size-guide-table thead th {
+    font-size: clamp(0.65rem, 1.1vw, 0.9rem);
+    font-weight: 900;
+}
+
+.size-guide-table tbody th {
+    width: 13%;
+    font-size: clamp(0.9rem, 1.8vw, 1.4rem);
+}
+
+.size-guide-table td span {
+    display: inline-block;
+    margin-left: 0.35rem;
+    color: #ef1d1d;
+    font-family: Arial, sans-serif;
+    font-size: 0.55rem;
+    font-weight: 800;
+    line-height: 1.15;
+    text-align: left;
+    text-transform: none;
+    vertical-align: middle;
+}
+
 /* MODAL */
 .modal-content{
     border:none;
@@ -239,4 +325,280 @@ h6{
     padding-bottom:.5rem;
     border-bottom:2px solid #facc15;
     display:inline-block;
+}
+
+.order-history-page {
+    padding-top: 1.5rem;
+}
+
+.order-history-section {
+    position: relative;
+}
+
+.order-history-hero {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 0.5rem;
+}
+
+.order-history-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.8rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(255, 178, 36, 0.12);
+    color: #c97700;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.order-history-hero h2 {
+    font-size: clamp(2rem, 4vw, 3.15rem);
+    color: #111827;
+}
+
+.order-history-hero p {
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.order-history-stat-card {
+    height: 100%;
+    padding: 1.05rem 1.2rem;
+    border-radius: 1rem;
+    background: #fff;
+    border: 1px solid rgba(251, 146, 60, 0.12);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+}
+
+.order-history-stat-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #9a6a00;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.order-history-stat-value {
+    color: #111827;
+    font-size: 1.55rem;
+    font-weight: 800;
+}
+
+.order-history-empty-card,
+.order-history-table-card {
+    border-radius: 1.2rem;
+    background: #ffffff;
+    border: 1px solid rgba(251, 146, 60, 0.12);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+
+.order-history-table-head {
+    padding: 1.2rem 1.35rem 0.9rem;
+    border-bottom: 1px solid rgba(251, 146, 60, 0.1);
+}
+
+.order-history-table-head h4 {
+    margin-bottom: 0.2rem;
+    font-size: 1.2rem;
+}
+
+.order-history-table-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(255, 178, 36, 0.1);
+    color: #9a6a00;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.order-history-table-wrap {
+    padding: 0 1rem 1rem;
+}
+
+.order-history-table {
+    margin-bottom: 0;
+    --bs-table-bg: transparent;
+    --bs-table-hover-bg: rgba(255, 178, 36, 0.05);
+    --bs-table-border-color: rgba(148, 163, 184, 0.12);
+}
+
+.order-history-table thead th {
+    padding: 0.9rem 0.75rem;
+    border-bottom-width: 1px;
+    color: #7c4a00;
+    background: linear-gradient(180deg, #ffd56a 0%, #ffbf3c 100%);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-color: rgba(210, 134, 17, 0.18);
+}
+
+.order-history-table tbody td {
+    padding: 0.95rem 0.75rem;
+    vertical-align: middle;
+    color: #1f2937;
+}
+
+.order-history-order-id {
+    color: #111827;
+}
+
+.order-history-price {
+    color: #1f2937 !important;
+}
+
+.order-history-soft-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.35rem;
+    margin-bottom: 0.35rem;
+    padding: 0.35rem 0.68rem;
+    border-radius: 999px;
+    background: #eef4ff !important;
+    color: #315ea8 !important;
+    border: 1px solid rgba(59, 130, 246, 0.18);
+    font-size: 0.8rem;
+}
+
+.order-history-soft-badge-accent {
+    background: #ecfeff !important;
+    color: #0f766e !important;
+    border-color: rgba(20, 184, 166, 0.18);
+}
+
+.order-history-status-badge {
+    border-radius: 999px;
+    padding: 0.42rem 0.72rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #1f2937 !important;
+}
+
+.order-history-table tbody .order-history-status-badge.bg-secondary {
+    background: #eef2f7 !important;
+    color: #475569 !important;
+    border: 1px solid rgba(100, 116, 139, 0.16);
+}
+
+.order-history-table tbody .order-history-status-badge.bg-info {
+    background: #eaf3ff !important;
+    color: #315ea8 !important;
+    border: 1px solid rgba(59, 130, 246, 0.18);
+}
+
+.order-history-table tbody .order-history-status-badge.bg-success {
+    background: #e7f8ee !important;
+    color: #15803d !important;
+    border: 1px solid rgba(34, 197, 94, 0.18);
+}
+
+.order-history-table tbody .order-history-status-badge.bg-warning {
+    background: #ecfeff !important;
+    color: #0f766e !important;
+    border: 1px solid rgba(20, 184, 166, 0.18);
+}
+
+.order-history-table tbody .order-history-status-badge.bg-danger {
+    background: #ffe8ec !important;
+    color: #be123c !important;
+    border: 1px solid rgba(244, 63, 94, 0.18);
+}
+
+.order-history-primary-btn {
+    border: none !important;
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.16);
+}
+
+.order-history-primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 26px rgba(37, 99, 235, 0.2);
+}
+
+.order-history-secondary-btn {
+    border: none !important;
+    background: linear-gradient(135deg, #67e8f9 0%, #06b6d4 100%) !important;
+    color: #0f172a !important;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(6, 182, 212, 0.14);
+}
+
+.footer {
+    position: relative;
+    margin-top: 2.2rem;
+    background: linear-gradient(180deg, #1f2329 0%, #15181d 100%) !important;
+    border-top: 4px solid #ffb224;
+}
+
+.footer::before {
+    position: absolute;
+    inset: 0;
+    content: "";
+    background: radial-gradient(circle at top right, rgba(255, 178, 36, 0.14), transparent 30%);
+    pointer-events: none;
+}
+
+.footer .container {
+    position: relative;
+    z-index: 1;
+}
+
+.footer small,
+.footer a {
+    font-weight: 500;
+}
+
+.footer a:hover {
+    color: #ffcf45 !important;
+}
+
+@media (max-width: 991.98px) {
+    .order-history-table-wrap {
+        padding: 0 0.8rem 0.9rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .size-guide-table {
+        min-width: 620px;
+    }
+
+    .size-guide-table th,
+    .size-guide-table td {
+        padding: 0.3rem 0.4rem;
+    }
+
+    .order-history-page {
+        padding-top: 1.25rem;
+    }
+
+    .order-history-hero {
+        padding: 1.75rem 0.5rem 0.75rem;
+    }
+
+    .order-history-table-head {
+        padding: 1rem 0.9rem 0.8rem;
+    }
+
+    .order-history-table tbody td,
+    .order-history-table thead th {
+        padding: 0.8rem 0.6rem;
+    }
+
+    .footer {
+        text-align: center;
+    }
 }

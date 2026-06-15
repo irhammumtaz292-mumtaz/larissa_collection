@@ -1,3 +1,13 @@
+<?php
+    $popup = $popup ?? false;
+    $warnaPopup = $warnaPopup ?? 'secondary';
+    $statusPopup = $statusPopup ?? '';
+    $iconPopup = $iconPopup ?? 'info-circle';
+    $laman = $laman ?? '';
+    $popupEksekusi = $popupEksekusi ?? '';
+    $fileLaman = $fileLaman ?? '';
+?>
+
 <!-- Popup -->
 <section aria-label="Popup">
     <?php if ($popup == true) :?>

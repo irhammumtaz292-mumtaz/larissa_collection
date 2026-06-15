@@ -142,6 +142,7 @@
     </div>
 
     <script>
+        // Mengamankan teks sebelum dimasukkan ke HTML.
         function escapeHtml(value) {
             return String(value ?? '')
                 .replaceAll('&', '&amp;')
@@ -151,6 +152,7 @@
                 .replaceAll("'", '&#039;');
         }
 
+        // Membuat label status harga berdasarkan status harga dan pembayaran.
         function formatStatusHarga(statusHarga, statusPembayaran) {
             if (statusHarga === 'Menunggu Harga') {
                 return 'Pending';
@@ -165,6 +167,7 @@
             return statusHarga || 'Menunggu Harga';
         }
 
+        // Memformat tanggal database menjadi format tampilan Indonesia.
         function formatTanggalPesanan(value) {
             if (!value) {
                 return '-';
@@ -179,6 +182,7 @@
             return `${parts[2]}/${parts[1]}/${parts[0]}${jam}`;
         }
 
+        // Membuat tampilan detail desain pesanan untuk modal detail laporan.
         function renderDesignDetail(pesanan) {
             if (pesanan.desain_custom_files) {
                 let files = {};
@@ -266,6 +270,38 @@
             `;
         }
 
+        // Membuat tampilan rincian ukuran dari data JSON ukuran pesanan.
+        function renderUkuranDetail(ukuranValue) {
+            let ukuran = {};
+
+            try {
+                ukuran = typeof ukuranValue === 'string'
+                    ? JSON.parse(ukuranValue || '{}')
+                    : (ukuranValue || {});
+            } catch (error) {
+                ukuran = {};
+            }
+
+            const ukuranHtml = Object.entries(ukuran)
+                .filter(([, qty]) => parseInt(qty || 0, 10) > 0)
+                .map(([size, qty]) => `
+                    <div class="col-auto">
+                        <div class="border rounded-3 bg-light px-3 py-2 text-center">
+                            <div class="text-muted small">Ukuran ${escapeHtml(size)}</div>
+                            <div class="fw-bold">${parseInt(qty, 10)} pcs</div>
+                        </div>
+                    </div>
+                `)
+                .join('');
+
+            return ukuranHtml || `
+                <div class="col-12">
+                    <p class="fw-bold mb-0">-</p>
+                </div>
+            `;
+        }
+
+        // Mengisi modal detail laporan pesanan dengan data pesanan lengkap.
         function setDetailModal(pesanan) {
             document.getElementById('detailNoPesanan').textContent = '#' + String(pesanan.id_pesanan).padStart(6, '0');
 
@@ -316,6 +352,13 @@
                     <div class="col-6">
                         <p class="text-muted small mb-1">Warna</p>
                         <p class="fw-bold">${escapeHtml(pesanan.nama_warna || '-')}</p>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <p class="text-muted small mb-2">Ukuran Yang Dipesan</p>
+                    <div class="row g-2">
+                        ${renderUkuranDetail(pesanan.ukuran)}
                     </div>
                 </div>
 
